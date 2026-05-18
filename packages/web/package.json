@@ -1,0 +1,16 @@
+{
+  "name": "@sentropic/agent-stats-web",
+  "version": "0.0.0",
+  "description": "Local web dashboard for agent-stats (SvelteKit).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'WP8 — SvelteKit dev server (not yet wired)'",
+    "build": "echo 'WP8 — SvelteKit build (not yet wired)'",
+    "typecheck": "echo 'WP8 — svelte-check (not yet wired)'"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

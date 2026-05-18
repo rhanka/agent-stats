@@ -1,0 +1,36 @@
+# Node
+node_modules/
+*.log
+npm-debug.log*
+.npm
+.eslintcache
+
+# Build
+dist/
+build/
+.svelte-kit/
+.vite/
+.turbo/
+
+# Tests / coverage
+coverage/
+*.lcov
+.vitest-cache/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Project
+.agent-stats/
+fixtures/.private/
+*.bak
