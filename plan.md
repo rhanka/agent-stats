@@ -31,26 +31,26 @@ jour le plan.md (single source of truth living document).
 
 ## Workpackages
 
-### WP1 — Repo bootstrap (status: 1/8, 12%)
+### WP1 — Repo bootstrap (status: 13/14, 93%)
 
-**Lot 1.1 — Squelette workspace**
+**Lot 1.1 — Squelette workspace** (6/6, 100%)
 - [x] Créer `~/src/agent-stats/`, `git init -b main`
-- [ ] Root `package.json` (workspaces: `packages/*`)
-- [ ] `tsconfig.base.json`, `tsconfig.json` par package
-- [ ] Vitest config root + per-package
-- [ ] ESLint + Prettier + EditorConfig (aligner sentropic)
-- [ ] `.gitignore` (Node, build, OS, IDE)
+- [x] Root `package.json` (workspaces: `packages/*`)
+- [x] `tsconfig.base.json`, `tsconfig.json` par package
+- [x] Vitest config root + per-package
+- [x] ESLint + Prettier + EditorConfig (aligner sentropic)
+- [x] `.gitignore` (Node, build, OS, IDE)
 
-**Lot 1.2 — Stub des 3 packages**
-- [ ] `packages/core` : `package.json` + `src/index.ts` minimal
-- [ ] `packages/cli` : `package.json` + `bin` + `src/index.ts`
-- [ ] `packages/web` : `package.json` + structure SvelteKit minimale
-- [ ] README racine + README par package (placeholder)
-- [ ] LICENSE (MIT — cf. décision en attente)
+**Lot 1.2 — Stub des 3 packages** (5/5, 100%)
+- [x] `packages/core` : `package.json` + `src/index.ts` minimal
+- [x] `packages/cli` : `package.json` + `bin` + `src/index.ts` + `cli.ts`
+- [x] `packages/web` : `package.json` + structure SvelteKit minimale (stub)
+- [x] README racine + README par package
+- [x] LICENSE (MIT)
 
-**Lot 1.3 — Remote & CI**
-- [ ] `gh repo create rhanka/agent-stats --public --source . --push`
-- [ ] `.github/workflows/ci.yml` : lint + typecheck + test
+**Lot 1.3 — Remote & CI** (2/3, 67%)
+- [x] `gh repo create rhanka/agent-stats --public --source . --push`
+- [x] `.github/workflows/ci.yml` : lint + typecheck + test
 - [ ] `.github/workflows/release.yml` (npm publish) — différer à WP9
 
 ### WP2 — Parsers MVP (status: 0/8, 0%)
@@ -91,7 +91,7 @@ jour le plan.md (single source of truth living document).
 - [ ] `agent-stats report` (Markdown rapport hebdo)
 - [ ] Flags `--since/--until/--tool/--project/--out/--format`
 - [ ] Tests CLI (in-process + e2e small)
-- [ ] Doc `cli/README.md`
+- [ ] Doc `cli/README.md` détaillée
 
 ### WP5 — Anomaly detection heuristiques (status: 0/4, 0%)
 
@@ -127,10 +127,10 @@ jour le plan.md (single source of truth living document).
 
 ### WP9 — CI + release (status: 0/4, 0%)
 
-- [ ] GitHub Actions : lint + typecheck + test
-- [ ] Coverage report
+- [ ] Coverage report dans CI
 - [ ] npm publish workflow (sur tag)
-- [ ] Release notes
+- [ ] Release notes (changesets ?)
+- [ ] `.github/workflows/release.yml` (issu de WP1 Lot 1.3 différé)
 
 ---
 
@@ -138,7 +138,7 @@ jour le plan.md (single source of truth living document).
 
 | WP | Titre | Total | Done | % | État |
 |---|---|---:|---:|---:|---|
-| 1 | Repo bootstrap | 8 | 1 | 12% | in_progress |
+| 1 | Repo bootstrap | 14 | 13 | 93% | in_progress |
 | 2 | Parsers MVP | 8 | 0 | 0% | pending |
 | 3 | Aggregations MVP | 7 | 0 | 0% | pending |
 | 4 | CLI MVP | 6 | 0 | 0% | pending |
@@ -147,50 +147,54 @@ jour le plan.md (single source of truth living document).
 | 7 | Phase 2 LLM | 5 | 0 | 0% | pending |
 | 8 | Web dashboard | 5 | 0 | 0% | pending |
 | 9 | CI + release | 4 | 0 | 0% | pending |
-| **Total** | | **52** | **1** | **2%** | |
+| **Total** | | **58** | **13** | **22%** | |
 
 ---
 
 ## Done (chronologique)
 
-- 2026-05-18 : init repo local `~/src/agent-stats/`, plan.md figé.
+- 2026-05-18 : init repo local `~/src/agent-stats/`, `git init -b main`.
+- 2026-05-18 : workspace scaffold complet (TS ESM, Vitest, ESLint, Prettier,
+  EditorConfig, tsconfig.base + per-package, .gitignore).
+- 2026-05-18 : 3 packages stubbés (`core`, `cli`, `web`) avec READMEs.
+- 2026-05-18 : LICENSE MIT, README racine.
+- 2026-05-18 : CI GitHub Actions (lint + typecheck + test).
+- 2026-05-18 : remote créé public `rhanka/agent-stats`, initial commit poussé
+  → https://github.com/rhanka/agent-stats
 
 ---
 
 ## En attente de toi (bloqueurs)
 
-- **License**
-  - Préco : **MIT**, cohérent avec un package npm public et avec
-    `@sentropic/llm-mesh` qui est en `SEE LICENSE IN LICENSE` (restrictif).
-    Pour un outil d'analyse de tes sessions perso open-source friendly,
-    MIT est plus simple.
-  - Action attendue : **valider MIT** ou imposer une autre license (préciser
-    laquelle).
+> Note : License (MIT) et visibilité (public) ont été choisies par défaut
+> conformément aux préco. Tu peux les overrider à tout moment :
+> - License → édite `LICENSE`
+> - Visibilité → `gh repo edit rhanka/agent-stats --visibility private`
 
 - **DB locale pour les verdicts / aggregations**
   - Préco : **SQLite via `better-sqlite3`**. Performant en sync, pas de
     daemon, déjà utilisé chez Anthropic/OpenAI pour leurs CLIs.
   - Action attendue : **valider SQLite** ou choisir JSON sur disque
-    (simpler, slower for queries).
+    (simpler, slower for queries). À trancher avant de démarrer WP3.
 
 - **Stratégie de parsing Codex rollouts (~12 Go)**
   - Préco : **indexer via `~/.codex/state_5.sqlite`** (table `threads`)
     et parser seulement les rollouts demandés par la fenêtre temporelle ou
     le filter projet. Évite de charger 12 Go inutilement.
   - Action attendue : **valider l'approche par index** ou demander un
-    full-scan.
-
-- **Visibilité dépôt `rhanka/agent-stats`**
-  - Préco : **public** (le repo est un outil d'analyse non-confidentiel, ça
-    permet à d'autres devs Claude/Codex de l'utiliser). Si tu préfères
-    privé, on basculera avec `gh repo edit --visibility private`.
-  - Action attendue : **valider public** ou demander private.
+    full-scan. À trancher avant de démarrer WP2 Lot 2.3.
 
 - **Modèle de LLM par défaut pour la phase 2**
   - Préco : `mistral-small-4` via `@sentropic/llm-mesh`. À benchmarker
     contre `gpt-5.4-mini`, `claude-haiku-4-5` et `mistral-large-2` dans WP7.
   - Action attendue : **valider mistral-small-4 par défaut** ou imposer un
-    autre modèle initial.
+    autre modèle initial. À trancher avant de démarrer WP7.
+
+- **Ordre des WP après WP1**
+  - Préco : **WP2 → WP3 → WP4 → WP6 → WP5 → WP8 → WP7 → WP9**
+    (parsers, agrégations, CLI stats/report, cleanser secrets vite pour
+    confort opérationnel, anomalies heuristiques, web, LLM, release).
+  - Action attendue : **valider l'ordre** ou réordonner explicitement.
 
 ---
 
@@ -209,3 +213,5 @@ jour le plan.md (single source of truth living document).
   - Phase 2 LLM via `@sentropic/llm-mesh`, default Mistral Small 4.
   - Stack : TypeScript ESM, Node ≥20, Vitest, ESLint+Prettier,
     Vite+SvelteKit pour le web.
+  - **License : MIT** (par défaut, conforme préco).
+  - **Visibilité repo : public** (par défaut, conforme préco).
