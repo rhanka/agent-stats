@@ -1,0 +1,40 @@
+{
+  "name": "@sentropic/agent-stats-core",
+  "version": "0.0.0",
+  "description": "Parsers, aggregations and schema for agent-stats (Claude Code + Codex CLI session analyzer).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./parsers/claude": {
+      "types": "./dist/parsers/claude.d.ts",
+      "import": "./dist/parsers/claude.js"
+    },
+    "./parsers/codex": {
+      "types": "./dist/parsers/codex.d.ts",
+      "import": "./dist/parsers/codex.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhanka/agent-stats.git",
+    "directory": "packages/core"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@sentropic/agent-stats",
+  "version": "0.0.0",
+  "description": "CLI for agent-stats — analyze Claude Code and Codex CLI sessions.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agent-stats": "./dist/cli.js"
+  },
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@sentropic/agent-stats-core": "0.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhanka/agent-stats.git",
+    "directory": "packages/cli"
+  },
+  "license": "MIT"
+}
