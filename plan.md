@@ -57,7 +57,7 @@ jour le plan.md (single source of truth living document).
 - [x] `.github/workflows/ci.yml` : lint + typecheck + test
 - [ ] `.github/workflows/release.yml` (npm publish) — différer à WP9
 
-### WP2 — Parsers MVP (status: 5/10, 50%)
+### WP2 — Parsers MVP (status: 8/10, 80%)
 
 **Lot 2.1 — Schéma commun** (2/2, 100%)
 
@@ -72,14 +72,14 @@ jour le plan.md (single source of truth living document).
 - [x] Tests Vitest couvrant les sub-types (`tool_use`, `tool_result`,
       `usage`, `thinking`, `attachment`, user string content) — 6/6 verts
 
-**Lot 2.3 — Parser Codex (via index sqlite)** (0/3)
+**Lot 2.3 — Parser Codex (via index sqlite)** (3/3, 100%)
 
-- [ ] `core/src/parsers/codex.ts` : utilise `~/.codex/state_5.sqlite`
+- [x] `core/src/parsers/codex.ts` : utilise `~/.codex/state_5.sqlite`
       (table `threads`) pour filtrer, parse seulement les rollouts demandés
-- [ ] Fixtures + `better-sqlite3` adapter
-- [ ] Tests couvrant `event_msg` (`token_count`, `agent_message`,
-      `task_*`, `context_compacted`, `mcp_tool_call_*`, `web_search_*`),
-      `response_item`, `compacted`, `session_meta`
+- [x] Fixtures + `better-sqlite3` adapter
+- [x] Tests couvrant `event_msg` (`token_count`, `user_message`,
+      `context_compacted`, `mcp_tool_call_end`, `exec_command_end`),
+      `response_item` (`function_call`), `session_meta` — 10/10 verts
 
 **Lot 2.4 — Collect API** (0/2)
 
@@ -153,7 +153,7 @@ jour le plan.md (single source of truth living document).
 | WP        | Titre                |  Total |   Done |       % | État        |
 | --------- | -------------------- | -----: | -----: | ------: | ----------- |
 | 1         | Repo bootstrap       |     14 |     13 |     93% | in_progress |
-| 2         | Parsers MVP          |     10 |      5 |     50% | in_progress |
+| 2         | Parsers MVP          |     10 |      8 |     80% | in_progress |
 | 3         | Aggregations MVP     |      8 |      0 |      0% | pending     |
 | 4         | CLI MVP              |      6 |      0 |      0% | pending     |
 | 6         | Cleanser secrets     |      5 |      0 |      0% | pending     |
@@ -161,7 +161,7 @@ jour le plan.md (single source of truth living document).
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **18** | **30%** |             |
+| **Total** |                      | **61** | **21** | **34%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -184,6 +184,10 @@ Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
   complets. `SessionEvent`, `Usage`, `SessionMeta` + parser streaming
   JSONL Claude + fixture hand-crafted + 6 tests Vitest verts.
   Format/lint/typecheck passent en CI local.
+- 2026-05-18 : WP2 Lot 2.3 (parser Codex) complet. `indexCodexSessions()`
+  via `better-sqlite3` (lit `state_5.sqlite` readonly), `parseCodexRollout()`
+  streaming sur jsonl + fixture rollout + 10 tests Vitest verts (16 au total).
+  Ajout de `*.tsbuildinfo` au .gitignore.
 
 ---
 
