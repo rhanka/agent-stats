@@ -15,3 +15,4 @@ export {
   type IndexCodexOptions,
   type ParseCodexRolloutOptions,
 } from './parsers/codex.js';
+export { collect, decodeClaudeProjectDir, type CollectOptions } from './collect.js';

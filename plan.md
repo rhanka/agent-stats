@@ -57,7 +57,7 @@ jour le plan.md (single source of truth living document).
 - [x] `.github/workflows/ci.yml` : lint + typecheck + test
 - [ ] `.github/workflows/release.yml` (npm publish) — différer à WP9
 
-### WP2 — Parsers MVP (status: 8/10, 80%)
+### WP2 — Parsers MVP (status: 10/10, 100%)
 
 **Lot 2.1 — Schéma commun** (2/2, 100%)
 
@@ -81,10 +81,11 @@ jour le plan.md (single source of truth living document).
       `context_compacted`, `mcp_tool_call_end`, `exec_command_end`),
       `response_item` (`function_call`), `session_meta` — 10/10 verts
 
-**Lot 2.4 — Collect API** (0/2)
+**Lot 2.4 — Collect API** (2/2, 100%)
 
-- [ ] `collect({sources, since, until, project?})` : iterator d'événements
-- [ ] Tests d'intégration parsers + collect
+- [x] `collect({sources, since, until, project?})` : iterator d'événements
+- [x] Tests d'intégration parsers + collect (7 tests Vitest, dont scénarios
+      both-sources, source-filter, project filter, time window)
 
 ### WP3 — Aggregations MVP (status: 0/8, 0%)
 
@@ -153,7 +154,7 @@ jour le plan.md (single source of truth living document).
 | WP        | Titre                |  Total |   Done |       % | État        |
 | --------- | -------------------- | -----: | -----: | ------: | ----------- |
 | 1         | Repo bootstrap       |     14 |     13 |     93% | in_progress |
-| 2         | Parsers MVP          |     10 |      8 |     80% | in_progress |
+| 2         | Parsers MVP          |     10 |     10 |    100% | completed   |
 | 3         | Aggregations MVP     |      8 |      0 |      0% | pending     |
 | 4         | CLI MVP              |      6 |      0 |      0% | pending     |
 | 6         | Cleanser secrets     |      5 |      0 |      0% | pending     |
@@ -161,7 +162,7 @@ jour le plan.md (single source of truth living document).
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **21** | **34%** |             |
+| **Total** |                      | **61** | **23** | **38%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -188,6 +189,11 @@ Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
   via `better-sqlite3` (lit `state_5.sqlite` readonly), `parseCodexRollout()`
   streaming sur jsonl + fixture rollout + 10 tests Vitest verts (16 au total).
   Ajout de `*.tsbuildinfo` au .gitignore.
+- 2026-05-18 : WP2 Lot 2.4 (Collect API) complet. `collect({sources, since,
+until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
+  (avec décodage cwd) + appelle `indexCodexSessions` + `parseCodexRollout`.
+  7 tests d'intégration (source filter, project filter, time window,
+  decode). **WP2 clôturé à 100% (10/10, 23 tests verts au total).**
 
 ---
 
