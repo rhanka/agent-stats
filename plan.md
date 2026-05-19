@@ -16,6 +16,7 @@ Stack : TypeScript ESM, Node 20+, Vitest, Vite+Svelte, esbuild.
 ## Mécanisme de mise à jour de ce plan
 
 Après chaque commit ou tâche complétée :
+
 1. Cocher l'item terminé (`[ ]` → `[x]`).
 2. Recalculer le `status: X/Y, Z%` du workpackage concerné.
 3. Recalculer le tableau **Status** global.
@@ -34,6 +35,7 @@ jour le plan.md (single source of truth living document).
 ### WP1 — Repo bootstrap (status: 13/14, 93%)
 
 **Lot 1.1 — Squelette workspace** (6/6, 100%)
+
 - [x] Créer `~/src/agent-stats/`, `git init -b main`
 - [x] Root `package.json` (workspaces: `packages/*`)
 - [x] `tsconfig.base.json`, `tsconfig.json` par package
@@ -42,6 +44,7 @@ jour le plan.md (single source of truth living document).
 - [x] `.gitignore` (Node, build, OS, IDE)
 
 **Lot 1.2 — Stub des 3 packages** (5/5, 100%)
+
 - [x] `packages/core` : `package.json` + `src/index.ts` minimal
 - [x] `packages/cli` : `package.json` + `bin` + `src/index.ts` + `cli.ts`
 - [x] `packages/web` : `package.json` + structure SvelteKit minimale (stub)
@@ -49,32 +52,41 @@ jour le plan.md (single source of truth living document).
 - [x] LICENSE (MIT)
 
 **Lot 1.3 — Remote & CI** (2/3, 67%)
+
 - [x] `gh repo create rhanka/agent-stats --public --source . --push`
 - [x] `.github/workflows/ci.yml` : lint + typecheck + test
 - [ ] `.github/workflows/release.yml` (npm publish) — différer à WP9
 
-### WP2 — Parsers MVP (status: 0/8, 0%)
+### WP2 — Parsers MVP (status: 5/10, 50%)
 
-**Lot 2.1 — Schéma commun**
-- [ ] Types `SessionEvent`, `SessionMeta`, `ProjectInfo`, `ToolCall`, `Usage`
-- [ ] Doc inline du schéma dans `core/src/schema.ts`
+**Lot 2.1 — Schéma commun** (2/2, 100%)
 
-**Lot 2.2 — Parser Claude**
-- [ ] `parsers/claude.ts` : streaming JSONL, mapping vers `SessionEvent`
-- [ ] Tests sur fixtures réelles (anonymisées) `tests/fixtures/claude/*.jsonl`
-- [ ] Gestion `attachment` / `hook_success` / `tool_use` / `tool_result`
+- [x] Types `SessionEvent` (union discriminée), `SessionMeta`, `Usage`,
+      `ToolCall`, etc.
+- [x] `core/src/schema.ts` documenté inline
 
-**Lot 2.3 — Parser Codex**
-- [ ] `parsers/codex.ts` : streaming JSONL des rollouts, mapping schéma
-- [ ] Tests sur fixtures `tests/fixtures/codex/*.jsonl`
-- [ ] Gestion `event_msg` (`token_count`, `agent_message`, `task_*`,
-      `compacted`, `mcp_tool_call_*`), `response_item`
+**Lot 2.2 — Parser Claude** (3/3, 100%)
 
-**Lot 2.4 — Collect API**
-- [ ] `collect({sources, since, until})` : iterator d'événements
+- [x] `core/src/parsers/claude.ts` : streaming JSONL → `SessionEvent`
+- [x] Fixtures hand-crafted dans `tests/fixtures/claude/`
+- [x] Tests Vitest couvrant les sub-types (`tool_use`, `tool_result`,
+      `usage`, `thinking`, `attachment`, user string content) — 6/6 verts
+
+**Lot 2.3 — Parser Codex (via index sqlite)** (0/3)
+
+- [ ] `core/src/parsers/codex.ts` : utilise `~/.codex/state_5.sqlite`
+      (table `threads`) pour filtrer, parse seulement les rollouts demandés
+- [ ] Fixtures + `better-sqlite3` adapter
+- [ ] Tests couvrant `event_msg` (`token_count`, `agent_message`,
+      `task_*`, `context_compacted`, `mcp_tool_call_*`, `web_search_*`),
+      `response_item`, `compacted`, `session_meta`
+
+**Lot 2.4 — Collect API** (0/2)
+
+- [ ] `collect({sources, since, until, project?})` : iterator d'événements
 - [ ] Tests d'intégration parsers + collect
 
-### WP3 — Aggregations MVP (status: 0/7, 0%)
+### WP3 — Aggregations MVP (status: 0/8, 0%)
 
 - [ ] `aggregateWeekly(events, groupBy)` (week × project × tool × model)
 - [ ] Métrique volumétrie : tokens in/cached/out/reasoning
@@ -83,6 +95,8 @@ jour le plan.md (single source of truth living document).
 - [ ] Métrique sub-agents : depth, parent→enfants
 - [ ] Métrique outils & skills
 - [ ] Coût estimé via rate card (cf. mémoire `reference_codex-quota-equation`)
+- [ ] Storage adapter `JsonStorage` (default) + interface `StorageAdapter`
+      pour brancher surch / opendb plus tard
 
 ### WP4 — CLI MVP (status: 0/6, 0%)
 
@@ -93,14 +107,6 @@ jour le plan.md (single source of truth living document).
 - [ ] Tests CLI (in-process + e2e small)
 - [ ] Doc `cli/README.md` détaillée
 
-### WP5 — Anomaly detection heuristiques (status: 0/4, 0%)
-
-- [ ] Règles : insultes/négations, retries, IA loops, compactions runaway,
-      error rate tools, sessions zombies
-- [ ] `detectAnomalies(events, opts)` (heuristiques seulement, sans LLM)
-- [ ] CLI sub-command `agent-stats anomalies`
-- [ ] Tests
-
 ### WP6 — Cleanser secrets (status: 0/5, 0%)
 
 - [ ] Wrapper `secretlint` + preset recommend
@@ -109,21 +115,29 @@ jour le plan.md (single source of truth living document).
 - [ ] CLI sub-command `agent-stats clean`
 - [ ] Tests sur fixtures avec faux secrets
 
-### WP7 — Phase 2 LLM via `@sentropic/llm-mesh` (status: 0/5, 0%)
+### WP5 — Anomaly detection heuristiques (status: 0/4, 0%)
 
-- [ ] Intégration `@sentropic/llm-mesh` (dep workspace)
-- [ ] `analyzeWithLlm(session, opts)` produit verdict JSON
-- [ ] Cache verdicts en sqlite local (`~/.agent-stats/db.sqlite`)
-- [ ] CLI sub-command `agent-stats analyze`
-- [ ] Module `bench` : eval set + comparaison modèles (mistral-small-4 par défaut)
+- [ ] Règles : insultes/négations, retries, IA loops, compactions runaway,
+      error rate tools, sessions zombies
+- [ ] `detectAnomalies(events, opts)` (heuristiques seulement, sans LLM)
+- [ ] CLI sub-command `agent-stats anomalies`
+- [ ] Tests
 
 ### WP8 — Web dashboard (status: 0/5, 0%)
 
 - [ ] SvelteKit app dans `packages/web`
 - [ ] Pages : `/`, `/projects/[name]`, `/sessions/[id]`, `/anomalies`, `/bench`
 - [ ] Adapter static, bundling via Vite
-- [ ] Source de données : sqlite local + API thin
+- [ ] Source de données : storage adapter (JSON ou surch/opendb si mature)
 - [ ] CLI sub-command `agent-stats web` (lance serveur dev/prod local)
+
+### WP7 — Phase 2 LLM via `@sentropic/llm-mesh` (status: 0/5, 0%)
+
+- [ ] Intégration `@sentropic/llm-mesh` (dep workspace)
+- [ ] `analyzeWithLlm(session, opts)` produit verdict JSON
+- [ ] Cache verdicts dans le storage adapter actif
+- [ ] CLI sub-command `agent-stats analyze`
+- [ ] Module `bench` : eval set + comparaison modèles (mistral-small-4 par défaut)
 
 ### WP9 — CI + release (status: 0/4, 0%)
 
@@ -136,18 +150,20 @@ jour le plan.md (single source of truth living document).
 
 ## Status (mis à jour automatiquement)
 
-| WP | Titre | Total | Done | % | État |
-|---|---|---:|---:|---:|---|
-| 1 | Repo bootstrap | 14 | 13 | 93% | in_progress |
-| 2 | Parsers MVP | 8 | 0 | 0% | pending |
-| 3 | Aggregations MVP | 7 | 0 | 0% | pending |
-| 4 | CLI MVP | 6 | 0 | 0% | pending |
-| 5 | Anomaly heuristiques | 4 | 0 | 0% | pending |
-| 6 | Cleanser secrets | 5 | 0 | 0% | pending |
-| 7 | Phase 2 LLM | 5 | 0 | 0% | pending |
-| 8 | Web dashboard | 5 | 0 | 0% | pending |
-| 9 | CI + release | 4 | 0 | 0% | pending |
-| **Total** | | **58** | **13** | **22%** | |
+| WP        | Titre                |  Total |   Done |       % | État        |
+| --------- | -------------------- | -----: | -----: | ------: | ----------- |
+| 1         | Repo bootstrap       |     14 |     13 |     93% | in_progress |
+| 2         | Parsers MVP          |     10 |      5 |     50% | in_progress |
+| 3         | Aggregations MVP     |      8 |      0 |      0% | pending     |
+| 4         | CLI MVP              |      6 |      0 |      0% | pending     |
+| 6         | Cleanser secrets     |      5 |      0 |      0% | pending     |
+| 5         | Anomaly heuristiques |      4 |      0 |      0% | pending     |
+| 8         | Web dashboard        |      5 |      0 |      0% | pending     |
+| 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
+| 9         | CI + release         |      4 |      0 |      0% | pending     |
+| **Total** |                      | **61** | **18** | **30%** |             |
+
+Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
 ---
 
@@ -161,46 +177,30 @@ jour le plan.md (single source of truth living document).
 - 2026-05-18 : CI GitHub Actions (lint + typecheck + test).
 - 2026-05-18 : remote créé public `rhanka/agent-stats`, initial commit poussé
   → https://github.com/rhanka/agent-stats
+- 2026-05-18 : 4 bloqueurs résolus (storage adapter JSON par défaut +
+  swap surch/opendb, parsing Codex via index sqlite, LLM default
+  mistral-small-4, ordre WP2→3→4→6→5→8→7→9).
+- 2026-05-18 : WP2 Lot 2.1 (schéma commun) + Lot 2.2 (parser Claude)
+  complets. `SessionEvent`, `Usage`, `SessionMeta` + parser streaming
+  JSONL Claude + fixture hand-crafted + 6 tests Vitest verts.
+  Format/lint/typecheck passent en CI local.
 
 ---
 
 ## En attente de toi (bloqueurs)
 
-> Note : License (MIT) et visibilité (public) ont été choisies par défaut
-> conformément aux préco. Tu peux les overrider à tout moment :
-> - License → édite `LICENSE`
-> - Visibilité → `gh repo edit rhanka/agent-stats --visibility private`
+> Aucun bloqueur actif. Les 4 décisions structurantes ont été tranchées
+> (cf. Décisions log).
 
-- **DB locale pour les verdicts / aggregations**
-  - Préco : **SQLite via `better-sqlite3`**. Performant en sync, pas de
-    daemon, déjà utilisé chez Anthropic/OpenAI pour leurs CLIs.
-  - Action attendue : **valider SQLite** ou choisir JSON sur disque
-    (simpler, slower for queries). À trancher avant de démarrer WP3.
-
-- **Stratégie de parsing Codex rollouts (~12 Go)**
-  - Préco : **indexer via `~/.codex/state_5.sqlite`** (table `threads`)
-    et parser seulement les rollouts demandés par la fenêtre temporelle ou
-    le filter projet. Évite de charger 12 Go inutilement.
-  - Action attendue : **valider l'approche par index** ou demander un
-    full-scan. À trancher avant de démarrer WP2 Lot 2.3.
-
-- **Modèle de LLM par défaut pour la phase 2**
-  - Préco : `mistral-small-4` via `@sentropic/llm-mesh`. À benchmarker
-    contre `gpt-5.4-mini`, `claude-haiku-4-5` et `mistral-large-2` dans WP7.
-  - Action attendue : **valider mistral-small-4 par défaut** ou imposer un
-    autre modèle initial. À trancher avant de démarrer WP7.
-
-- **Ordre des WP après WP1**
-  - Préco : **WP2 → WP3 → WP4 → WP6 → WP5 → WP8 → WP7 → WP9**
-    (parsers, agrégations, CLI stats/report, cleanser secrets vite pour
-    confort opérationnel, anomalies heuristiques, web, LLM, release).
-  - Action attendue : **valider l'ordre** ou réordonner explicitement.
+Les prochaines questions arriveront si un choix structurant émerge pendant
+l'implémentation (typiquement : format du fichier secrets-patterns en WP6,
+modèle exact pour eval set en WP7, format dashboard en WP8).
 
 ---
 
 ## Décisions log
 
-- 2026-05-18 :
+- 2026-05-18 (bootstrap) :
   - Nom de package npm : `@sentropic/agent-stats` (umbrella CLI) +
     `@sentropic/agent-stats-core` (lib) + `@sentropic/agent-stats-web`
     (dashboard).
@@ -213,5 +213,16 @@ jour le plan.md (single source of truth living document).
   - Phase 2 LLM via `@sentropic/llm-mesh`, default Mistral Small 4.
   - Stack : TypeScript ESM, Node ≥20, Vitest, ESLint+Prettier,
     Vite+SvelteKit pour le web.
-  - **License : MIT** (par défaut, conforme préco).
-  - **Visibilité repo : public** (par défaut, conforme préco).
+  - License : MIT.
+  - Visibilité repo : public.
+
+- 2026-05-18 (post-bootstrap) :
+  - **Storage adapter** : JSON sur disque par défaut (`~/.agent-stats/`).
+    Interface `StorageAdapter` exposée pour brancher plus tard les bases
+    `surch` ou `opendb` (sibling repos `../surch` `../opendb`) quand
+    matures.
+  - **Parsing Codex** : index via `~/.codex/state_5.sqlite` (table
+    `threads`), parse à la demande les rollouts filtrés.
+  - **LLM phase 2 default** : `mistral-small-4` (sera benchmarké en WP7
+    contre `claude-haiku-4-5`, `gpt-5.4-mini`, autres).
+  - **Ordre d'attaque** : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.

@@ -16,11 +16,11 @@ dans les jsonl.
 
 ## Packages
 
-| Package | Rôle |
-|---|---|
+| Package                       | Rôle                                                  |
+| ----------------------------- | ----------------------------------------------------- |
 | `@sentropic/agent-stats-core` | Parsing (Claude + Codex), aggregations, schéma commun |
-| `@sentropic/agent-stats` | CLI `agent-stats` (binary umbrella) |
-| `@sentropic/agent-stats-web` | Dashboard local Svelte/Vite |
+| `@sentropic/agent-stats`      | CLI `agent-stats` (binary umbrella)                   |
+| `@sentropic/agent-stats-web`  | Dashboard local Svelte/Vite                           |
 
 ## Usage (prévu, pas encore disponible)
 
