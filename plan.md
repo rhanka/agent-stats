@@ -87,16 +87,16 @@ jour le plan.md (single source of truth living document).
 - [x] Tests d'intégration parsers + collect (7 tests Vitest, dont scénarios
       both-sources, source-filter, project filter, time window)
 
-### WP3 — Aggregations MVP (status: 0/8, 0%)
+### WP3 — Aggregations MVP (status: 8/8, 100%)
 
-- [ ] `aggregateWeekly(events, groupBy)` (week × project × tool × model)
-- [ ] Métrique volumétrie : tokens in/cached/out/reasoning
-- [ ] Métrique cache efficiency
-- [ ] Métrique sessions : nb, durée, turns/session
-- [ ] Métrique sub-agents : depth, parent→enfants
-- [ ] Métrique outils & skills
-- [ ] Coût estimé via rate card (cf. mémoire `reference_codex-quota-equation`)
-- [ ] Storage adapter `JsonStorage` (default) + interface `StorageAdapter`
+- [x] `aggregateWeekly(events, groupBy)` (week × project × tool × model)
+- [x] Métrique volumétrie : tokens in/cached/out/reasoning
+- [x] Métrique cache efficiency
+- [x] Métrique sessions : nb, durée, turns/session
+- [x] Métrique sub-agents : depth, parent→enfants
+- [x] Métrique outils & skills
+- [x] Coût estimé via rate card (cf. mémoire `reference_codex-quota-equation`)
+- [x] Storage adapter `JsonStorage` (default) + interface `StorageAdapter`
       pour brancher surch / opendb plus tard
 
 ### WP4 — CLI MVP (status: 0/6, 0%)
@@ -155,14 +155,14 @@ jour le plan.md (single source of truth living document).
 | --------- | -------------------- | -----: | -----: | ------: | ----------- |
 | 1         | Repo bootstrap       |     14 |     13 |     93% | in_progress |
 | 2         | Parsers MVP          |     10 |     10 |    100% | completed   |
-| 3         | Aggregations MVP     |      8 |      0 |      0% | pending     |
+| 3         | Aggregations MVP     |      8 |      8 |    100% | completed   |
 | 4         | CLI MVP              |      6 |      0 |      0% | pending     |
 | 6         | Cleanser secrets     |      5 |      0 |      0% | pending     |
 | 5         | Anomaly heuristiques |      4 |      0 |      0% | pending     |
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **23** | **38%** |             |
+| **Total** |                      | **61** | **31** | **51%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
