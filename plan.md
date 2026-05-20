@@ -194,6 +194,15 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   (avec décodage cwd) + appelle `indexCodexSessions` + `parseCodexRollout`.
   7 tests d'intégration (source filter, project filter, time window,
   decode). **WP2 clôturé à 100% (10/10, 23 tests verts au total).**
+- 2026-05-18 : **WP3 Aggregations MVP clôturé à 100% (8/8).**
+  `aggregateSessions()` (pass 1) → `bucketWeekly()` (pass 2), helper
+  `aggregateWeekly()` end-to-end. Métriques volumétrie / cache efficiency /
+  sessions (count, durée, turns) / sub-agents (uniqueParents) / outils
+  (par catégorie et nom) / skills. Rate card avec devises strictement
+  séparées (`codex_credits` vs `claude_usd_cents`). Storage adapter
+  `JsonStorage` (default `~/.agent-stats/aggregations/<week>/<tool>.json`),
+  interface `StorageAdapter` prête pour brancher surch / opendb plus tard.
+  13 nouveaux tests (7 aggregations + 6 storage) → **36 verts au total.**
 
 ---
 
