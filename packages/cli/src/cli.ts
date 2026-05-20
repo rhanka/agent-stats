@@ -1,35 +1,76 @@
 #!/usr/bin/env node
 /**
- * agent-stats CLI entry. WP4 will implement subcommands:
- *   stats | report | anomalies | clean | analyze | web | bench
+ * agent-stats CLI entry.
+ * Subcommands: stats | report. The rest (anomalies, clean, analyze, web,
+ * bench) will follow in WP5-WP8.
  */
+
+import { writeFile } from 'node:fs/promises';
+
+import { Command } from 'commander';
 
 import { VERSION } from '@sentropic/agent-stats-core';
 
-const args = process.argv.slice(2);
+import { runStats } from './commands/stats.js';
+import { runReport } from './commands/report.js';
 
-if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
-  console.log(`agent-stats ${VERSION}
-Usage: agent-stats <command> [options]
+async function main(argv: string[]): Promise<number> {
+  const program = new Command();
+  program
+    .name('agent-stats')
+    .description('Analyze Claude Code and Codex CLI sessions.')
+    .version(VERSION);
 
-Commands (WIP):
-  stats        Output JSON statistics
-  report       Generate weekly Markdown report
-  anomalies    Detect frustration / out-of-control patterns
-  clean        Redact secrets from session jsonl
-  analyze      LLM-based analysis (via @sentropic/llm-mesh)
-  web          Launch local dashboard
-  bench        Benchmark LLM models
+  program
+    .command('stats')
+    .description('Compute weekly aggregations and output JSON or a compact table.')
+    .option('--since <iso>', 'Lower bound (ISO 8601)')
+    .option('--until <iso>', 'Upper bound (ISO 8601)')
+    .option('--tool <name>', 'Restrict to one tool: claude | codex')
+    .option('--project <cwd>', 'Filter by project cwd (exact or prefix with trailing /)')
+    .option('--format <fmt>', 'Output format: json | table', 'json')
+    .option('--out <file>', 'Write to file instead of stdout')
+    .action(async (opts) => {
+      const result = await runStats({
+        since: opts.since,
+        until: opts.until,
+        tool: opts.tool,
+        project: opts.project,
+        format: opts.format,
+      });
+      if (opts.out) await writeFile(opts.out, result.output);
+      else process.stdout.write(`${result.output}\n`);
+    });
 
-Run \`agent-stats <command> --help\` for details (once implemented).`);
-  process.exit(0);
+  program
+    .command('report')
+    .description('Generate a Markdown weekly report.')
+    .option('--since <iso>', 'Lower bound (ISO 8601)')
+    .option('--until <iso>', 'Upper bound (ISO 8601)')
+    .option('--tool <name>', 'Restrict to one tool: claude | codex')
+    .option('--project <cwd>', 'Filter by project cwd (exact or prefix with trailing /)')
+    .option('--top <n>', 'Top-N projects / models per week', (v) => parseInt(v, 10), 10)
+    .option('--out <file>', 'Write to file instead of stdout')
+    .action(async (opts) => {
+      const result = await runReport({
+        since: opts.since,
+        until: opts.until,
+        tool: opts.tool,
+        project: opts.project,
+        top: opts.top,
+      });
+      if (opts.out) await writeFile(opts.out, result.output);
+      else process.stdout.write(result.output);
+    });
+
+  await program.parseAsync(argv);
+  return 0;
 }
 
-if (args[0] === '--version' || args[0] === '-v') {
-  console.log(VERSION);
-  process.exit(0);
-}
-
-console.error(`agent-stats: command not implemented yet: ${args[0]}`);
-console.error(`See plan.md (WP4) — bootstrap phase only.`);
-process.exit(1);
+main(process.argv)
+  .then((code) => process.exit(code))
+  .catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`agent-stats: ${msg}`);
+    process.exit(1);
+  });

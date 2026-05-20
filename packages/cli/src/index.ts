@@ -1,6 +1,8 @@
 /**
  * @sentropic/agent-stats — CLI library entry.
- *
- * The binary itself is in ./cli.ts. WP4 will flesh out the subcommands.
+ * The binary lives in ./cli.ts. WP4 wires the `stats` and `report`
+ * subcommands; WP5+ will add the rest.
  */
 export { VERSION } from '@sentropic/agent-stats-core';
+export { runStats, type StatsCommandOptions, type StatsResult } from './commands/stats.js';
+export { runReport, type ReportCommandOptions, type ReportResult } from './commands/report.js';

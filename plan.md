@@ -99,14 +99,15 @@ jour le plan.md (single source of truth living document).
 - [x] Storage adapter `JsonStorage` (default) + interface `StorageAdapter`
       pour brancher surch / opendb plus tard
 
-### WP4 — CLI MVP (status: 0/6, 0%)
+### WP4 — CLI MVP (status: 6/6, 100%)
 
-- [ ] Binary `agent-stats` (commander ou yargs)
-- [ ] `agent-stats stats` (JSON, default)
-- [ ] `agent-stats report` (Markdown rapport hebdo)
-- [ ] Flags `--since/--until/--tool/--project/--out/--format`
-- [ ] Tests CLI (in-process + e2e small)
-- [ ] Doc `cli/README.md` détaillée
+- [x] Binary `agent-stats` (commander)
+- [x] `agent-stats stats` (JSON, default ; table en option)
+- [x] `agent-stats report` (Markdown rapport hebdo avec Totals/Top
+      projects/Top models par semaine)
+- [x] Flags `--since/--until/--tool/--project/--out/--format/--top`
+- [x] Tests CLI (in-process : 4 stats + 3 report = 7 tests verts)
+- [x] Doc `cli/README.md` détaillée
 
 ### WP6 — Cleanser secrets (status: 0/5, 0%)
 
@@ -156,13 +157,13 @@ jour le plan.md (single source of truth living document).
 | 1         | Repo bootstrap       |     14 |     13 |     93% | in_progress |
 | 2         | Parsers MVP          |     10 |     10 |    100% | completed   |
 | 3         | Aggregations MVP     |      8 |      8 |    100% | completed   |
-| 4         | CLI MVP              |      6 |      0 |      0% | pending     |
+| 4         | CLI MVP              |      6 |      6 |    100% | completed   |
 | 6         | Cleanser secrets     |      5 |      0 |      0% | pending     |
 | 5         | Anomaly heuristiques |      4 |      0 |      0% | pending     |
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **31** | **51%** |             |
+| **Total** |                      | **61** | **37** | **61%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -203,6 +204,11 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   `JsonStorage` (default `~/.agent-stats/aggregations/<week>/<tool>.json`),
   interface `StorageAdapter` prête pour brancher surch / opendb plus tard.
   13 nouveaux tests (7 aggregations + 6 storage) → **36 verts au total.**
+- 2026-05-18 : **WP4 CLI MVP clôturé à 100% (6/6).** Binary `agent-stats`
+  via `commander`, subcommands `stats` (JSON/table) et `report` (Markdown
+  hebdo avec Totals / Top projects / Top models). Flags `--since/--until/
+--tool/--project/--out/--format/--top`. README CLI mis à jour avec
+  exemples. 7 nouveaux tests (4 stats + 3 report) → **43 tests verts.**
 
 ---
 
