@@ -14,6 +14,7 @@ import { VERSION } from '@sentropic/agent-stats-core';
 import { runStats } from './commands/stats.js';
 import { runReport } from './commands/report.js';
 import { runClean } from './commands/clean.js';
+import { runAnomalies } from './commands/anomalies.js';
 
 async function main(argv: string[]): Promise<number> {
   const program = new Command();
@@ -33,6 +34,27 @@ async function main(argv: string[]): Promise<number> {
     .option('--out <file>', 'Write to file instead of stdout')
     .action(async (opts) => {
       const result = await runStats({
+        since: opts.since,
+        until: opts.until,
+        tool: opts.tool,
+        project: opts.project,
+        format: opts.format,
+      });
+      if (opts.out) await writeFile(opts.out, result.output);
+      else process.stdout.write(`${result.output}\n`);
+    });
+
+  program
+    .command('anomalies')
+    .description('Heuristic anomaly detection (compactions, loops, error rate, zombie).')
+    .option('--since <iso>', 'Lower bound (ISO 8601)')
+    .option('--until <iso>', 'Upper bound (ISO 8601)')
+    .option('--tool <name>', 'Restrict to one tool: claude | codex')
+    .option('--project <cwd>', 'Filter by project cwd (exact or prefix with trailing /)')
+    .option('--format <fmt>', 'Output format: json | table', 'json')
+    .option('--out <file>', 'Write to file instead of stdout')
+    .action(async (opts) => {
+      const result = await runAnomalies({
         since: opts.since,
         until: opts.until,
         tool: opts.tool,

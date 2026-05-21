@@ -42,3 +42,10 @@ export {
 } from './storage.js';
 export { scanString, type SecretMatch } from './secrets.js';
 export { cleanFile, type CleanFileOptions, type CleanMode, type CleanStats } from './cleanser.js';
+export {
+  detectAnomalies,
+  type Anomaly,
+  type AnomalySeverity,
+  type AnomalyType,
+  type DetectAnomaliesOptions,
+} from './anomalies.js';
