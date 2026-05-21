@@ -40,3 +40,5 @@ export {
   type StorageAdapter,
   type StorageFilter,
 } from './storage.js';
+export { scanString, type SecretMatch } from './secrets.js';
+export { cleanFile, type CleanFileOptions, type CleanMode, type CleanStats } from './cleanser.js';

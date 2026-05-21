@@ -109,13 +109,17 @@ jour le plan.md (single source of truth living document).
 - [x] Tests CLI (in-process : 4 stats + 3 report = 7 tests verts)
 - [x] Doc `cli/README.md` détaillée
 
-### WP6 — Cleanser secrets (status: 0/5, 0%)
+### WP6 — Cleanser secrets (status: 4/5, 80%)
 
-- [ ] Wrapper `secretlint` + preset recommend
-- [ ] Custom Sentropic patterns (config yaml extensible)
-- [ ] Modes `--archive` (default), `--inplace` (avec `.bak`), `--llm-input`
-- [ ] CLI sub-command `agent-stats clean`
-- [ ] Tests sur fixtures avec faux secrets
+- [x] Wrapper `secretlint` + preset recommend (28 rules : AWS, Anthropic,
+      OpenAI, GitHub, GitLab, Slack, Stripe, JWT/privatekey, etc.)
+- [ ] Custom Sentropic patterns (config yaml extensible) — différé
+      (preset recommend suffisant pour MVP ; à reprendre si patterns
+      internes apparaissent)
+- [x] Modes `--archive` (default), `--inplace` (avec `.bak`), `--llm-input`
+      (avec `--max-tool-result-bytes`)
+- [x] CLI sub-command `agent-stats clean --input <path> --mode <m> --out <dir>`
+- [x] Tests sur fixtures avec faux secrets (5 core + 4 cli = 9 verts)
 
 ### WP5 — Anomaly detection heuristiques (status: 0/4, 0%)
 
@@ -158,12 +162,12 @@ jour le plan.md (single source of truth living document).
 | 2         | Parsers MVP          |     10 |     10 |    100% | completed   |
 | 3         | Aggregations MVP     |      8 |      8 |    100% | completed   |
 | 4         | CLI MVP              |      6 |      6 |    100% | completed   |
-| 6         | Cleanser secrets     |      5 |      0 |      0% | pending     |
+| 6         | Cleanser secrets     |      5 |      4 |     80% | in_progress |
 | 5         | Anomaly heuristiques |      4 |      0 |      0% | pending     |
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **37** | **61%** |             |
+| **Total** |                      | **61** | **41** | **67%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 

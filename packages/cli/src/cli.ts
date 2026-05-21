@@ -13,6 +13,7 @@ import { VERSION } from '@sentropic/agent-stats-core';
 
 import { runStats } from './commands/stats.js';
 import { runReport } from './commands/report.js';
+import { runClean } from './commands/clean.js';
 
 async function main(argv: string[]): Promise<number> {
   const program = new Command();
@@ -40,6 +41,28 @@ async function main(argv: string[]): Promise<number> {
       });
       if (opts.out) await writeFile(opts.out, result.output);
       else process.stdout.write(`${result.output}\n`);
+    });
+
+  program
+    .command('clean')
+    .description('Redact secrets in session jsonl files (via secretlint).')
+    .requiredOption('--input <path>', 'File or directory to clean')
+    .option('--mode <mode>', 'archive | inplace | llm-input', 'archive')
+    .option('--out <dir>', 'Output directory (archive | llm-input)')
+    .option(
+      '--max-tool-result-bytes <n>',
+      'Truncate strings larger than N bytes (llm-input mode)',
+      (v) => parseInt(v, 10),
+      2048,
+    )
+    .action(async (opts) => {
+      const result = await runClean({
+        input: opts.input,
+        mode: opts.mode,
+        out: opts.out,
+        maxToolResultBytes: opts.maxToolResultBytes,
+      });
+      process.stdout.write(`${result.output}\n`);
     });
 
   program
