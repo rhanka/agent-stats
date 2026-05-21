@@ -121,13 +121,17 @@ jour le plan.md (single source of truth living document).
 - [x] CLI sub-command `agent-stats clean --input <path> --mode <m> --out <dir>`
 - [x] Tests sur fixtures avec faux secrets (5 core + 4 cli = 9 verts)
 
-### WP5 — Anomaly detection heuristiques (status: 0/4, 0%)
+### WP5 — Anomaly detection heuristiques (status: 4/4, 100%)
 
-- [ ] Règles : insultes/négations, retries, IA loops, compactions runaway,
-      error rate tools, sessions zombies
-- [ ] `detectAnomalies(events, opts)` (heuristiques seulement, sans LLM)
-- [ ] CLI sub-command `agent-stats anomalies`
-- [ ] Tests
+- [x] Règles déterministes : `runaway_compactions`, `high_error_rate`,
+      `prompt_retry_loop`, `tool_loop`, `zombie_session` (les
+      "insultes/négations" sont reportées à WP7 LLM puisque les prompts
+      sont hashés — privacy by design)
+- [x] `detectAnomalies(events, opts)` avec seuils customisables
+      (compactions, error rate, retries, tool loop, gap minutes)
+- [x] CLI sub-command `agent-stats anomalies` (JSON ou table, tri par
+      severity descendante)
+- [x] Tests : 8 core + 3 CLI = 11 verts
 
 ### WP8 — Web dashboard (status: 0/5, 0%)
 
@@ -163,11 +167,11 @@ jour le plan.md (single source of truth living document).
 | 3         | Aggregations MVP     |      8 |      8 |    100% | completed   |
 | 4         | CLI MVP              |      6 |      6 |    100% | completed   |
 | 6         | Cleanser secrets     |      5 |      4 |     80% | in_progress |
-| 5         | Anomaly heuristiques |      4 |      0 |      0% | pending     |
+| 5         | Anomaly heuristiques |      4 |      4 |    100% | completed   |
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **41** | **67%** |             |
+| **Total** |                      | **61** | **45** | **74%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
