@@ -6,3 +6,4 @@
 export { VERSION } from '@sentropic/agent-stats-core';
 export { runStats, type StatsCommandOptions, type StatsResult } from './commands/stats.js';
 export { runReport, type ReportCommandOptions, type ReportResult } from './commands/report.js';
+export { runClean, type CleanCommandOptions, type CleanCommandResult } from './commands/clean.js';

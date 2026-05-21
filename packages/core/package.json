@@ -41,7 +41,10 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
+    "@secretlint/types": "^13.0.2",
     "@types/better-sqlite3": "^7.6.13",
-    "better-sqlite3": "^12.10.0"
+    "better-sqlite3": "^12.10.0",
+    "secretlint": "^13.0.2"
   }
 }
