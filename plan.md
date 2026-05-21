@@ -217,6 +217,22 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   hebdo avec Totals / Top projects / Top models). Flags `--since/--until/
 --tool/--project/--out/--format/--top`. README CLI mis à jour avec
   exemples. 7 nouveaux tests (4 stats + 3 report) → **43 tests verts.**
+- 2026-05-20 : **WP6 Cleanser secrets à 80% (4/5).** `secretlint` +
+  preset-recommend (28 rule families). 3 modes : `archive`, `inplace`
+  (avec `.bak`), `llm-input` (truncation des strings >
+  `maxToolResultBytes`). CLI sub-command `agent-stats clean` (file ou
+  dir). Tags de redaction stables `<<SECRET:<rule_id>:<sha256-16>>>`.
+  Fixtures secrets construites à l'exécution (helper
+  `tests/helpers/fake-secrets.ts`) pour passer la push-protection
+  GitHub. 9 nouveaux tests (5 core + 4 CLI) → **52 verts.** Item différé :
+  custom Sentropic patterns yaml.
+- 2026-05-20 : **WP5 Anomaly heuristics clôturé à 100% (4/4).**
+  `detectAnomalies(events, opts)` avec 5 patterns (`runaway_compactions`,
+  `high_error_rate`, `prompt_retry_loop`, `tool_loop`, `zombie_session`),
+  seuils customisables, severity low/medium/high dérivée du ratio
+  par-rapport-au-seuil. CLI sub-command `agent-stats anomalies`
+  (JSON/table, tri severity desc). 11 nouveaux tests (8 core + 3 CLI)
+  → **63 tests verts.**
 
 ---
 
