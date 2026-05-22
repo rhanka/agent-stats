@@ -1,6 +1,6 @@
 {
   "name": "@sentropic/agent-stats-core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Parsers, aggregations and schema for agent-stats (Claude Code + Codex CLI session analyzer).",
   "type": "module",
   "main": "./dist/index.js",
@@ -46,5 +46,8 @@
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.10.0",
     "secretlint": "^13.0.2"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7"
   }
 }
