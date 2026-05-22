@@ -32,7 +32,7 @@ jour le plan.md (single source of truth living document).
 
 ## Workpackages
 
-### WP1 — Repo bootstrap (status: 13/14, 93%)
+### WP1 — Repo bootstrap (status: 14/14, 100%)
 
 **Lot 1.1 — Squelette workspace** (6/6, 100%)
 
@@ -51,11 +51,12 @@ jour le plan.md (single source of truth living document).
 - [x] README racine + README par package
 - [x] LICENSE (MIT)
 
-**Lot 1.3 — Remote & CI** (2/3, 67%)
+**Lot 1.3 — Remote & CI** (3/3, 100%)
 
 - [x] `gh repo create rhanka/agent-stats --public --source . --push`
-- [x] `.github/workflows/ci.yml` : lint + typecheck + test
-- [ ] `.github/workflows/release.yml` (npm publish) — différer à WP9
+- [x] `.github/workflows/ci.yml` : lint + typecheck + test + coverage
+- [x] `.github/workflows/release.yml` (npm publish sur tag `v*`) — livré
+      dans WP9
 
 ### WP2 — Parsers MVP (status: 10/10, 100%)
 
@@ -149,12 +150,12 @@ jour le plan.md (single source of truth living document).
 - [ ] CLI sub-command `agent-stats analyze`
 - [ ] Module `bench` : eval set + comparaison modèles (mistral-small-4 par défaut)
 
-### WP9 — CI + release (status: 0/4, 0%)
+### WP9 — CI + release (status: 4/4, 100%)
 
-- [ ] Coverage report dans CI
-- [ ] npm publish workflow (sur tag)
-- [ ] Release notes (changesets ?)
-- [ ] `.github/workflows/release.yml` (issu de WP1 Lot 1.3 différé)
+- [x] Coverage report dans CI (`@vitest/coverage-v8`, upload artifact)
+- [x] npm publish workflow (sur tag `v*` : provenance, NPM_TOKEN secret)
+- [x] Release notes auto-générées (`git log` entre tags, push gh release)
+- [x] `.github/workflows/release.yml` créé (publish core + cli)
 
 ---
 
@@ -162,7 +163,7 @@ jour le plan.md (single source of truth living document).
 
 | WP        | Titre                |  Total |   Done |       % | État        |
 | --------- | -------------------- | -----: | -----: | ------: | ----------- |
-| 1         | Repo bootstrap       |     14 |     13 |     93% | in_progress |
+| 1         | Repo bootstrap       |     14 |     14 |    100% | completed   |
 | 2         | Parsers MVP          |     10 |     10 |    100% | completed   |
 | 3         | Aggregations MVP     |      8 |      8 |    100% | completed   |
 | 4         | CLI MVP              |      6 |      6 |    100% | completed   |
@@ -170,8 +171,8 @@ jour le plan.md (single source of truth living document).
 | 5         | Anomaly heuristiques |      4 |      4 |    100% | completed   |
 | 8         | Web dashboard        |      5 |      0 |      0% | pending     |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
-| 9         | CI + release         |      4 |      0 |      0% | pending     |
-| **Total** |                      | **61** | **45** | **74%** |             |
+| 9         | CI + release         |      4 |      4 |    100% | completed   |
+| **Total** |                      | **61** | **50** | **82%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -233,6 +234,14 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   par-rapport-au-seuil. CLI sub-command `agent-stats anomalies`
   (JSON/table, tri severity desc). 11 nouveaux tests (8 core + 3 CLI)
   → **63 tests verts.**
+- 2026-05-21 : **WP9 CI + release clôturé à 100% (4/4) → WP1 → 100%.**
+  Versions bumpées à `0.1.0` (core, cli, web + `VERSION`). Coverage
+  v8 dans CI (94% moyenne, upload artifact). Workflow `release.yml`
+  sur tag `v*` : vérifie que le tag matche les versions packages,
+  publie core puis cli sur npm (avec provenance), crée une GitHub
+  release avec changelog généré du `git log`. `CHANGELOG.md` racine.
+  Pour publier : commit, `git tag v0.1.0`, `git push --tags`. Requiert
+  `NPM_TOKEN` secret côté repo.
 
 ---
 
