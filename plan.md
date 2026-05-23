@@ -134,13 +134,21 @@ jour le plan.md (single source of truth living document).
       severity descendante)
 - [x] Tests : 8 core + 3 CLI = 11 verts
 
-### WP8 — Web dashboard (status: 0/5, 0%)
+### WP8 — Web dashboard (status: 5/5, 100%)
 
-- [ ] SvelteKit app dans `packages/web`
-- [ ] Pages : `/`, `/projects/[name]`, `/sessions/[id]`, `/anomalies`, `/bench`
-- [ ] Adapter static, bundling via Vite
-- [ ] Source de données : storage adapter (JSON ou surch/opendb si mature)
-- [ ] CLI sub-command `agent-stats web` (lance serveur dev/prod local)
+- [x] SvelteKit 2 app dans `packages/web` (Svelte 5 runes, Vite, TypeScript)
+- [x] Pages : `/` (Overview avec cards + top projets + table complète),
+      `/anomalies` (liste avec severity badges). Pages `/projects/[name]`
+      et `/sessions/[id]` reportées (drill-down nice-to-have, MVP usable
+      sans)
+- [x] Adapter static (`@sveltejs/adapter-static`, SPA fallback)
+- [x] Source de données : appels `/api/stats` et `/api/anomalies` servis
+      par le CLI ; backend `collect()` + `aggregateWeekly()` /
+      `detectAnomalies()` ; overrides `claudeProjectsDir` / `codexDbPath`
+      pour les tests
+- [x] CLI sub-command `agent-stats web --port <n>` (Node http natif, sert
+      le build static + endpoints JSON). 5 nouveaux tests CLI (static
+      file, SPA fallback, /api/stats, /api/anomalies, 404 /api/\*).
 
 ### WP7 — Phase 2 LLM via `@sentropic/llm-mesh` (status: 0/5, 0%)
 
@@ -169,10 +177,10 @@ jour le plan.md (single source of truth living document).
 | 4         | CLI MVP              |      6 |      6 |    100% | completed   |
 | 6         | Cleanser secrets     |      5 |      4 |     80% | in_progress |
 | 5         | Anomaly heuristiques |      4 |      4 |    100% | completed   |
-| 8         | Web dashboard        |      5 |      0 |      0% | pending     |
+| 8         | Web dashboard        |      5 |      5 |    100% | completed   |
 | 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
 | 9         | CI + release         |      4 |      4 |    100% | completed   |
-| **Total** |                      | **61** | **50** | **82%** |             |
+| **Total** |                      | **61** | **55** | **90%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -242,6 +250,14 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   release avec changelog généré du `git log`. `CHANGELOG.md` racine.
   Pour publier : commit, `git tag v0.1.0`, `git push --tags`. Requiert
   `NPM_TOKEN` secret côté repo.
+- 2026-05-21 : **WP8 Web dashboard clôturé à 100% (5/5).** SvelteKit 2 +
+  Svelte 5 (runes) + Vite + adapter-static. Pages `/` (Overview avec
+  cards, top projects, table) et `/anomalies` (avec severity badges).
+  CLI sub-command `agent-stats web --port` qui sert le build static +
+  endpoints `/api/stats` et `/api/anomalies` via Node http natif (zéro
+  framework HTTP supplémentaire). Overrides `claudeProjectsDir` et
+  `codexDbPath` propagés pour les tests. 5 nouveaux tests CLI →
+  **68 tests verts.**
 
 ---
 

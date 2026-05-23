@@ -15,6 +15,7 @@ import { runStats } from './commands/stats.js';
 import { runReport } from './commands/report.js';
 import { runClean } from './commands/clean.js';
 import { runAnomalies } from './commands/anomalies.js';
+import { runWeb } from './commands/web.js';
 
 async function main(argv: string[]): Promise<number> {
   const program = new Command();
@@ -42,6 +43,19 @@ async function main(argv: string[]): Promise<number> {
       });
       if (opts.out) await writeFile(opts.out, result.output);
       else process.stdout.write(`${result.output}\n`);
+    });
+
+  program
+    .command('web')
+    .description('Launch the local SvelteKit dashboard on http://127.0.0.1:<port>.')
+    .option('--port <n>', 'Listen port (default 4173)', (v) => parseInt(v, 10), 4173)
+    .option('--web-dir <dir>', 'Override the static build directory')
+    .action(async (opts) => {
+      const server = await runWeb({ port: opts.port, webDir: opts.webDir });
+      // Keep the process alive until Ctrl-C.
+      process.on('SIGINT', () => {
+        void server.close().then(() => process.exit(0));
+      });
     });
 
   program

@@ -12,3 +12,9 @@ export {
   type AnomaliesCommandOptions,
   type AnomaliesResult,
 } from './commands/anomalies.js';
+export {
+  runWeb,
+  startWebServer,
+  type WebCommandOptions,
+  type StartedWebServer,
+} from './commands/web.js';
