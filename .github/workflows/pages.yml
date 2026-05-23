@@ -1,0 +1,82 @@
+name: Deploy Pages
+
+# Build the SvelteKit static dashboard and publish it to GitHub Pages.
+# - Base path is env-driven (PAGES_BASE_PATH). Default `/agent-stats`
+#   matches the repo name when hosted under github.io/<user>/agent-stats.
+# - Custom domain is configured via the `PAGES_CUSTOM_DOMAIN` repository
+#   variable (Settings → Secrets and variables → Actions → Variables).
+#   When set, the workflow emits a CNAME file in the artifact and tells
+#   SvelteKit to use an empty base path (apex of the custom domain).
+# - Neither the base path nor the custom domain are stored in the lib.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: Resolve Pages config
+        id: pages_cfg
+        env:
+          PAGES_CUSTOM_DOMAIN: ${{ vars.PAGES_CUSTOM_DOMAIN }}
+        run: |
+          if [ -n "${PAGES_CUSTOM_DOMAIN}" ]; then
+            echo "base_path=" >> "$GITHUB_OUTPUT"
+            echo "custom_domain=${PAGES_CUSTOM_DOMAIN}" >> "$GITHUB_OUTPUT"
+            echo "Using custom domain '${PAGES_CUSTOM_DOMAIN}' (no base path)."
+          else
+            echo "base_path=/${GITHUB_REPOSITORY##*/}" >> "$GITHUB_OUTPUT"
+            echo "custom_domain=" >> "$GITHUB_OUTPUT"
+            echo "No custom domain set, using sub-path '/${GITHUB_REPOSITORY##*/}'."
+          fi
+
+      - name: Build web (with resolved base path)
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages_cfg.outputs.base_path }}
+        run: npm run build --workspace packages/web
+
+      - name: Emit CNAME when a custom domain is configured
+        if: steps.pages_cfg.outputs.custom_domain != ''
+        run: echo "${{ steps.pages_cfg.outputs.custom_domain }}" > packages/web/build/CNAME
+
+      - name: Disable Jekyll on the artifact
+        run: touch packages/web/build/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/web/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
