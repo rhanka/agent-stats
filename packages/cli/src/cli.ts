@@ -16,6 +16,7 @@ import { runReport } from './commands/report.js';
 import { runClean } from './commands/clean.js';
 import { runAnomalies } from './commands/anomalies.js';
 import { runWeb } from './commands/web.js';
+import { runAnalyze } from './commands/analyze.js';
 
 async function main(argv: string[]): Promise<number> {
   const program = new Command();
@@ -40,6 +41,29 @@ async function main(argv: string[]): Promise<number> {
         tool: opts.tool,
         project: opts.project,
         format: opts.format,
+      });
+      if (opts.out) await writeFile(opts.out, result.output);
+      else process.stdout.write(`${result.output}\n`);
+    });
+
+  program
+    .command('analyze')
+    .description('LLM analysis of top sessions via @sentropic/llm-mesh.')
+    .option('--since <iso>', 'Lower bound (ISO 8601)')
+    .option('--until <iso>', 'Upper bound (ISO 8601)')
+    .option('--tool <name>', 'Restrict to one tool: claude | codex')
+    .option('--project <cwd>', 'Filter by project cwd')
+    .option('--model <id>', 'LLM model (default mistral-small-4)', 'mistral-small-4')
+    .option('--limit <n>', 'Number of top sessions to analyze', (v) => parseInt(v, 10), 10)
+    .option('--out <file>', 'Write to file instead of stdout')
+    .action(async (opts) => {
+      const result = await runAnalyze({
+        since: opts.since,
+        until: opts.until,
+        tool: opts.tool,
+        project: opts.project,
+        model: opts.model,
+        limit: opts.limit,
       });
       if (opts.out) await writeFile(opts.out, result.output);
       else process.stdout.write(`${result.output}\n`);

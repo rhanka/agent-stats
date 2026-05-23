@@ -18,3 +18,4 @@ export {
   type WebCommandOptions,
   type StartedWebServer,
 } from './commands/web.js';
+export { runAnalyze, type AnalyzeCommandOptions, type AnalyzeResult } from './commands/analyze.js';
