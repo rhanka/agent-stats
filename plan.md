@@ -166,6 +166,33 @@ jour le plan.md (single source of truth living document).
       calcule MAE vs baseline + latency + erreurs par modèle, prêt à
       comparer mistral-small-4 vs alternatives
 
+### WP10 — Pages deploy + Sentropic design system (status: 2/5, 40%)
+
+**Lot 10.1 — Pages deploy env-driven** (2/2, 100%)
+
+- [x] `.github/workflows/pages.yml` : build le SvelteKit avec
+      `PAGES_BASE_PATH` env-driven (sub-path repo par défaut, vide si
+      custom domain). Pas de domaine en dur dans la lib.
+- [x] CNAME émis automatiquement quand la variable de repo
+      `PAGES_CUSTOM_DOMAIN` est définie (cible cible
+      `agent-stats.sent-tech.ca`). À setter dans Settings → Variables.
+
+**Lot 10.2 — Sentropic design system (UI)** (0/3, 0%)
+
+- [ ] Brancher `@sentropic/design-system-themes` (CSS vars,
+      `sent-tech.css` par défaut) dans `packages/web/src/routes/+layout.svelte`.
+      Bloqué : les packages design-system ne sont pas publiés npm
+      (workspace-local dans `~/src/sent-tech-design-system/packages/*`).
+      Préco : (a) attendre la publication officielle, OU (b) ajouter
+      `file:../../../sent-tech-design-system/packages/themes` en dev,
+      OR (c) intégrer le repo design-system comme submodule / monorepo
+      étendu.
+- [ ] Remplacer les inline styles de `+page.svelte` et
+      `anomalies/+page.svelte` par les composants
+      `@sentropic/design-system-svelte` (table, card, badge, button…).
+- [ ] Theme switcher (sent-tech / forge / entropic) — petit toggle dans
+      le header.
+
 ### WP9 — CI + release (status: 4/4, 100%)
 
 - [x] Coverage report dans CI (`@vitest/coverage-v8`, upload artifact)
@@ -188,7 +215,8 @@ jour le plan.md (single source of truth living document).
 | 8         | Web dashboard        |      5 |      5 |    100% | completed   |
 | 7         | Phase 2 LLM          |      5 |      5 |    100% | completed   |
 | 9         | CI + release         |      4 |      4 |    100% | completed   |
-| **Total** |                      | **61** | **60** | **98%** |             |
+| 10        | Pages + DS Sentropic |      5 |      2 |     40% | in_progress |
+| **Total** |                      | **66** | **62** | **94%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -274,13 +302,41 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   - injection programmatique. 9 nouveaux tests (7 core + 2 CLI) →
     **77 tests verts.** Reste WP6 last item (custom yaml patterns) :
     différé, non-bloquant.
+- 2026-05-23 : **WP10 Lot 10.1 livré (Pages env-driven).**
+  `svelte.config.js` lit `PAGES_BASE_PATH` (default vide = root) ;
+  workflow `pages.yml` calcule `base_path` à partir de la variable
+  repo `PAGES_CUSTOM_DOMAIN` (sub-path repo si absente, vide si
+  présente) et émet automatiquement le `CNAME` au build. Cible
+  prévue : `agent-stats.sent-tech.ca`. Aucun domaine en dur dans la
+  lib. Reste Lot 10.2 (Sentropic design system) — bloqué tant que les
+  packages `@sentropic/design-system-*` ne sont pas sur npm.
 
 ---
 
 ## En attente de toi (bloqueurs)
 
-> Aucun bloqueur actif. Les 4 décisions structurantes ont été tranchées
-> (cf. Décisions log).
+- **Pages — custom domain `agent-stats.sent-tech.ca`**
+  - Préco : ajouter dans Settings → Secrets & Variables → Actions →
+    Variables : `PAGES_CUSTOM_DOMAIN=agent-stats.sent-tech.ca`. Puis
+    créer un CNAME DNS `agent-stats.sent-tech.ca` → `rhanka.github.io`.
+    Activer GitHub Pages (source : GitHub Actions) sur le repo.
+  - Action attendue : **set la repo variable et configurer le DNS**.
+
+- **Sentropic design system — publication npm requise pour Lot 10.2**
+  - Préco : publier d'abord `@sentropic/design-system-themes` et
+    `@sentropic/design-system-svelte` sur npm (depuis le repo
+    `sent-tech-design-system`), puis on `npm install` côté agent-stats
+    et on bascule l'UI. Alternative court terme : `file:` dep locale,
+    mais ça casse hors environnement dev.
+  - Action attendue : **publier les deux packages design-system** OU
+    confirmer le `file:` dep dev-only.
+
+- **npm publish v0.1.0 — token + auth**
+  - Préco : exécuter `npm login` puis fournir le code OTP 2FA quand
+    je lance `npm publish`. Côté CI, ajouter `NPM_TOKEN` (automation
+    token) dans les secrets du repo pour les futurs releases via tag.
+  - Action attendue : **`npm login` interactif côté toi**, puis OTP
+    quand je le demande.
 
 Les prochaines questions arriveront si un choix structurant émerge pendant
 l'implémentation (typiquement : format du fichier secrets-patterns en WP6,
