@@ -49,3 +49,15 @@ export {
   type AnomalyType,
   type DetectAnomaliesOptions,
 } from './anomalies.js';
+export {
+  analyzeWithLlm,
+  benchModels,
+  type AnalysisVerdict,
+  type AnalyzeCache,
+  type AnalyzeOptions,
+  type BenchModelConfig,
+  type BenchModelResult,
+  type BenchOptions,
+  type BenchSampleBaseline,
+  type LlmMeshLike,
+} from './analyze.js';

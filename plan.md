@@ -150,13 +150,21 @@ jour le plan.md (single source of truth living document).
       le build static + endpoints JSON). 5 nouveaux tests CLI (static
       file, SPA fallback, /api/stats, /api/anomalies, 404 /api/\*).
 
-### WP7 — Phase 2 LLM via `@sentropic/llm-mesh` (status: 0/5, 0%)
+### WP7 — Phase 2 LLM via `@sentropic/llm-mesh` (status: 5/5, 100%)
 
-- [ ] Intégration `@sentropic/llm-mesh` (dep workspace)
-- [ ] `analyzeWithLlm(session, opts)` produit verdict JSON
-- [ ] Cache verdicts dans le storage adapter actif
-- [ ] CLI sub-command `agent-stats analyze`
-- [ ] Module `bench` : eval set + comparaison modèles (mistral-small-4 par défaut)
+- [x] Intégration `@sentropic/llm-mesh` en **peer dep optionnel** :
+      `analyzeWithLlm` accepte un `LlmMeshLike` (duck-typed sur `generate`)
+      via paramètre ; la CLI essaie un dynamic-import du package, sinon
+      laisse l'utilisateur fournir `mesh` programmatiquement
+- [x] `analyzeWithLlm(session, opts)` → `AnalysisVerdict` JSON
+      (`frustrationLevel`, `outOfControlScore`, `summary`, `rootCauses`)
+      avec clamp 0..10 et extraction `json` de réponses fencées
+- [x] Cache `AnalyzeCache` (interface `read`/`write`), backend libre
+      (JsonStorage utilisable directement, surch/opendb plus tard)
+- [x] CLI sub-command `agent-stats analyze --model … --limit …`
+- [x] Module `bench` : `benchModels({models, sessions, baselines})`
+      calcule MAE vs baseline + latency + erreurs par modèle, prêt à
+      comparer mistral-small-4 vs alternatives
 
 ### WP9 — CI + release (status: 4/4, 100%)
 
@@ -178,9 +186,9 @@ jour le plan.md (single source of truth living document).
 | 6         | Cleanser secrets     |      5 |      4 |     80% | in_progress |
 | 5         | Anomaly heuristiques |      4 |      4 |    100% | completed   |
 | 8         | Web dashboard        |      5 |      5 |    100% | completed   |
-| 7         | Phase 2 LLM          |      5 |      0 |      0% | pending     |
+| 7         | Phase 2 LLM          |      5 |      5 |    100% | completed   |
 | 9         | CI + release         |      4 |      4 |    100% | completed   |
-| **Total** |                      | **61** | **55** | **90%** |             |
+| **Total** |                      | **61** | **60** | **98%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -258,6 +266,14 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   framework HTTP supplémentaire). Overrides `claudeProjectsDir` et
   `codexDbPath` propagés pour les tests. 5 nouveaux tests CLI →
   **68 tests verts.**
+- 2026-05-21 : **WP7 Phase 2 LLM clôturé à 100% (5/5).** `analyzeWithLlm`
+  - `benchModels` dans `@sentropic/agent-stats-core` (duck-typed sur
+    `LlmMeshLike` → zéro hard dep sur `@sentropic/llm-mesh`).
+    `AnalyzeCache` interface pour stocker les verdicts (JsonStorage
+    compatible). CLI `agent-stats analyze` avec dynamic-import optionnel
+  - injection programmatique. 9 nouveaux tests (7 core + 2 CLI) →
+    **77 tests verts.** Reste WP6 last item (custom yaml patterns) :
+    différé, non-bloquant.
 
 ---
 
