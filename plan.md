@@ -335,7 +335,10 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   (build via Actions) ; workflow `pages.yml` re-dispatché → deploy OK.
   **Live : https://agent-stats.sent-tech.ca/ (HTTPS 200).** Ajout d'un
   `EmptyState` « run locally » sur les 2 pages pour le cas statique
-  (pas d'API `/api/*` sur Pages).
+  (pas d'API `/api/*` sur Pages). Routing Pages corrigé : `404.html`
+  (fallback SPA) + `prerender=true` sur `+layout.ts` → chaque route est
+  un fichier statique (vérifié live : `/` 200, `/anomalies` 200,
+  route inconnue 404).
 
 ---
 
