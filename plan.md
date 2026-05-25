@@ -328,31 +328,41 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   (`$lib/theme.svelte.ts`), styles résiduels sur tokens `--st-semantic-*`.
   Aucun thème en dur. `typecheck` 0 erreur, `build` OK, composants +
   vars de thème bundlés dans `_app/`. **WP10 clôturé 5/5. Total 65/66 (98%).**
+- 2026-05-25 : **Déploiement Pages bout-en-bout (par moi, sans action user).**
+  CNAME Cloudflare `agent-stats.sent-tech.ca` → `rhanka.github.io` (DNS-only)
+  via API CF (token depuis `onyxia/.env`) ; variable repo
+  `PAGES_CUSTOM_DOMAIN` + secret `NPM_TOKEN` posés via `gh` ; Pages activé
+  (build via Actions) ; workflow `pages.yml` re-dispatché → deploy OK.
+  **Live : https://agent-stats.sent-tech.ca/ (HTTPS 200).** Ajout d'un
+  `EmptyState` « run locally » sur les 2 pages pour le cas statique
+  (pas d'API `/api/*` sur Pages).
 
 ---
 
 ## En attente de toi (bloqueurs)
 
-- **Pages — custom domain `agent-stats.sent-tech.ca`**
-  - Préco : ajouter dans Settings → Secrets & Variables → Actions →
-    Variables : `PAGES_CUSTOM_DOMAIN=agent-stats.sent-tech.ca`. Puis
-    créer un CNAME DNS `agent-stats.sent-tech.ca` → `rhanka.github.io`.
-    Activer GitHub Pages (source : GitHub Actions) sur le repo.
-  - Action attendue : **set la repo variable et configurer le DNS**.
+_Aucun bloqueur ouvert — l'infra de déploiement a été configurée par moi
+(CF API token + `gh`)._
 
+- ~~**Pages — custom domain `agent-stats.sent-tech.ca`**~~
+  ✅ **Résolu 2026-05-25** : CNAME Cloudflare `agent-stats` → `rhanka.github.io`
+  (DNS-only) créé via l'API CF ; variable repo
+  `PAGES_CUSTOM_DOMAIN=agent-stats.sent-tech.ca` posée ; Pages activé
+  (build via GitHub Actions) ; deploy réussi. **Live HTTPS 200 :
+  https://agent-stats.sent-tech.ca/** (cert GitHub provisionné).
 - ~~**Sentropic design system — publication npm requise pour Lot 10.2**~~
   ✅ **Résolu 2026-05-25** : packages publiés `@0.7.0`, UI basculée.
+- ~~**npm publish v0.1.0 — token + auth**~~
+  ✅ **Résolu** : v0.1.0 publié (security key). Secret CI `NPM_TOKEN`
+  posé via `gh` (lu depuis `~/.npmrc`) pour les futurs releases via tag.
 
-- **npm publish v0.1.0 — token + auth**
-  - Préco : exécuter `npm login` puis fournir le code OTP 2FA quand
-    je lance `npm publish`. Côté CI, ajouter `NPM_TOKEN` (automation
-    token) dans les secrets du repo pour les futurs releases via tag.
-  - Action attendue : **`npm login` interactif côté toi**, puis OTP
-    quand je le demande.
+Note : le site statique Pages n'a pas de backend `/api/*` → les pages
+affichent un `EmptyState` « run locally » (et non une erreur crue). Les
+vraies données ne s'affichent qu'en local via `agent-stats web`.
 
 Les prochaines questions arriveront si un choix structurant émerge pendant
 l'implémentation (typiquement : format du fichier secrets-patterns en WP6,
-modèle exact pour eval set en WP7, format dashboard en WP8).
+modèle exact pour eval set en WP7).
 
 ---
 
