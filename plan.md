@@ -166,7 +166,7 @@ jour le plan.md (single source of truth living document).
       calcule MAE vs baseline + latency + erreurs par modèle, prêt à
       comparer mistral-small-4 vs alternatives
 
-### WP10 — Pages deploy + Sentropic design system (status: 2/5, 40%)
+### WP10 — Pages deploy + Sentropic design system (status: 5/5, 100%)
 
 **Lot 10.1 — Pages deploy env-driven** (2/2, 100%)
 
@@ -177,21 +177,21 @@ jour le plan.md (single source of truth living document).
       `PAGES_CUSTOM_DOMAIN` est définie (cible cible
       `agent-stats.sent-tech.ca`). À setter dans Settings → Variables.
 
-**Lot 10.2 — Sentropic design system (UI)** (0/3, 0%)
+**Lot 10.2 — Sentropic design system (UI)** (3/3, 100%)
 
-- [ ] Brancher `@sentropic/design-system-themes` (CSS vars,
-      `sent-tech.css` par défaut) dans `packages/web/src/routes/+layout.svelte`.
-      Bloqué : les packages design-system ne sont pas publiés npm
-      (workspace-local dans `~/src/sent-tech-design-system/packages/*`).
-      Préco : (a) attendre la publication officielle, OU (b) ajouter
-      `file:../../../sent-tech-design-system/packages/themes` en dev,
-      OR (c) intégrer le repo design-system comme submodule / monorepo
-      étendu.
-- [ ] Remplacer les inline styles de `+page.svelte` et
-      `anomalies/+page.svelte` par les composants
-      `@sentropic/design-system-svelte` (table, card, badge, button…).
-- [ ] Theme switcher (sent-tech / forge / entropic) — petit toggle dans
-      le header.
+- [x] Branché `@sentropic/design-system-{themes,svelte,tokens}@0.7.0`
+      (désormais publiés npm). `+layout.svelte` enveloppe l'app dans
+      `<ThemeProvider>` (compile le thème runtime + pose `data-st-theme`)
+      et utilise `<Header>` avec snippet de navigation. Aucun domaine ni
+      thème en dur — sélection persistée localStorage (`$lib/theme.svelte.ts`).
+- [x] Inline styles de `+page.svelte` / `anomalies/+page.svelte` remplacés
+      par `<Card>`, `<Button>`, `<Select>`, `<Badge>`, `<DataTable>` ;
+      styles résiduels passés sur les tokens sémantiques (`--st-semantic-*`).
+- [x] Theme switcher (sent-tech / forge / entropic) via `<Select>` dans les
+      actions du `<Header>`, lié au store de thème partagé.
+- Vérif : `typecheck` 0 erreur, `build` OK, composants (`st-badge`,
+  `st-button`, `st-card`, `st-field`, `DataTable`) + vars de thème bundlés
+  dans le client `_app/`.
 
 ### WP9 — CI + release (status: 4/4, 100%)
 
@@ -215,8 +215,8 @@ jour le plan.md (single source of truth living document).
 | 8         | Web dashboard        |      5 |      5 |    100% | completed   |
 | 7         | Phase 2 LLM          |      5 |      5 |    100% | completed   |
 | 9         | CI + release         |      4 |      4 |    100% | completed   |
-| 10        | Pages + DS Sentropic |      5 |      2 |     40% | in_progress |
-| **Total** |                      | **66** | **62** | **94%** |             |
+| 10        | Pages + DS Sentropic |      5 |      5 |    100% | completed   |
+| **Total** |                      | **66** | **65** | **98%** |             |
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -319,6 +319,15 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   Note : le push du tag déclenche `release.yml` qui échouera au step
   publish (versions déjà publiées + `NPM_TOKEN` absent) — échec
   inoffensif ; pour les futurs releases, ajouter le secret `NPM_TOKEN`.
+- 2026-05-25 : **WP10 Lot 10.2 livré (design system Sentropic).**
+  Les packages `@sentropic/design-system-{themes,svelte,tokens}@0.7.0`
+  étant désormais publiés npm, le dashboard web est passé au design
+  system : `<ThemeProvider>` + `<Header>` dans `+layout.svelte`,
+  `<Card>`/`<Button>`/`<Select>`/`<Badge>`/`<DataTable>` dans les deux
+  pages, theme switcher (sent-tech/forge/entropic) persisté localStorage
+  (`$lib/theme.svelte.ts`), styles résiduels sur tokens `--st-semantic-*`.
+  Aucun thème en dur. `typecheck` 0 erreur, `build` OK, composants +
+  vars de thème bundlés dans `_app/`. **WP10 clôturé 5/5. Total 65/66 (98%).**
 
 ---
 
@@ -331,14 +340,8 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
     Activer GitHub Pages (source : GitHub Actions) sur le repo.
   - Action attendue : **set la repo variable et configurer le DNS**.
 
-- **Sentropic design system — publication npm requise pour Lot 10.2**
-  - Préco : publier d'abord `@sentropic/design-system-themes` et
-    `@sentropic/design-system-svelte` sur npm (depuis le repo
-    `sent-tech-design-system`), puis on `npm install` côté agent-stats
-    et on bascule l'UI. Alternative court terme : `file:` dep locale,
-    mais ça casse hors environnement dev.
-  - Action attendue : **publier les deux packages design-system** OU
-    confirmer le `file:` dep dev-only.
+- ~~**Sentropic design system — publication npm requise pour Lot 10.2**~~
+  ✅ **Résolu 2026-05-25** : packages publiés `@0.7.0`, UI basculée.
 
 - **npm publish v0.1.0 — token + auth**
   - Préco : exécuter `npm login` puis fournir le code OTP 2FA quand

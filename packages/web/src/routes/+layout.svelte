@@ -1,17 +1,35 @@
 <script lang="ts">
+  import { ThemeProvider, Header, Select } from '@sentropic/design-system-svelte';
+  import { themeState, THEMES } from '$lib/theme.svelte';
+  import { base } from '$app/paths';
+
   let { children } = $props();
 </script>
 
-<header>
-  <nav>
-    <a href="/">Overview</a>
-    <a href="/anomalies">Anomalies</a>
-  </nav>
-</header>
+<ThemeProvider theme={themeState.theme}>
+  <Header title="agent-stats" label="Claude Code + Codex usage">
+    {#snippet navigation()}
+      <a href="{base}/">Overview</a>
+      <a href="{base}/anomalies">Anomalies</a>
+    {/snippet}
+    {#snippet actions()}
+      <Select
+        size="sm"
+        aria-label="Theme"
+        value={themeState.id}
+        onchange={(e) => themeState.set((e.currentTarget as HTMLSelectElement).value)}
+      >
+        {#each Object.values(THEMES) as t (t.id)}
+          <option value={t.id}>{t.label}</option>
+        {/each}
+      </Select>
+    {/snippet}
+  </Header>
 
-<main>
-  {@render children?.()}
-</main>
+  <main>
+    {@render children?.()}
+  </main>
+</ThemeProvider>
 
 <style>
   :global(body) {
@@ -20,21 +38,21 @@
       system-ui,
       -apple-system,
       sans-serif;
-    background: #0e1116;
-    color: #d7dde7;
   }
-  header {
-    background: #161b22;
-    padding: 12px 24px;
-    border-bottom: 1px solid #30363d;
+  /* The ThemeProvider wrapper carries the data-st-theme attribute, so the
+     semantic tokens resolve here. Fill the viewport with the theme surface. */
+  :global([data-st-theme]) {
+    min-height: 100vh;
+    background: var(--st-semantic-surface-default);
+    color: var(--st-semantic-text-primary);
   }
-  nav a {
-    color: #58a6ff;
+  :global([data-st-theme] nav a) {
+    color: var(--st-semantic-text-link, var(--st-semantic-text-primary));
     margin-right: 16px;
     text-decoration: none;
     font-weight: 500;
   }
-  nav a:hover {
+  :global([data-st-theme] nav a:hover) {
     text-decoration: underline;
   }
   main {
