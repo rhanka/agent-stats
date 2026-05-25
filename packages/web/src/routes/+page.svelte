@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { Card, Button, Select, Badge, DataTable } from '@sentropic/design-system-svelte';
+  import {
+    Card,
+    Button,
+    Select,
+    Badge,
+    DataTable,
+    EmptyState,
+  } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
 
   type WeeklyAggregation = {
@@ -173,7 +180,15 @@
 {#if loading}
   <p>Loading…</p>
 {:else if error}
-  <p class="error">Error: {error}</p>
+  <EmptyState
+    title="No live data"
+    message="This dashboard reads your local sessions through a small API. The static site (e.g. agent-stats.sent-tech.ca) has no backend, so there is nothing to show here. Run it locally to analyze your own data."
+  >
+    {#snippet action()}
+      <code>npx @sentropic/agent-stats web</code>
+      <p class="hint">then open http://127.0.0.1:4173 — detail: {error}</p>
+    {/snippet}
+  </EmptyState>
 {:else}
   <section class="cards">
     <Card>
@@ -256,7 +271,9 @@
     border-radius: 3px;
     font-size: 12px;
   }
-  .error {
-    color: var(--st-semantic-status-error, #f85149);
+  .hint {
+    font-size: 12px;
+    color: var(--st-semantic-text-muted, var(--st-semantic-text-secondary));
+    margin-top: 8px;
   }
 </style>
