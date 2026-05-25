@@ -66,6 +66,9 @@ jobs:
       - name: Disable Jekyll on the artifact
         run: touch packages/web/build/.nojekyll
 
+      - name: SPA fallback for client-side routes (GitHub Pages 404 → app shell)
+        run: cp packages/web/build/index.html packages/web/build/404.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
