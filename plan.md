@@ -310,6 +310,15 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   prévue : `agent-stats.sent-tech.ca`. Aucun domaine en dur dans la
   lib. Reste Lot 10.2 (Sentropic design system) — bloqué tant que les
   packages `@sentropic/design-system-*` ne sont pas sur npm.
+- 2026-05-25 : **🚀 v0.1.0 PUBLIÉ SUR NPM.**
+  `@sentropic/agent-stats-core@0.1.0` + `@sentropic/agent-stats@0.1.0`
+  live sur registry.npmjs.org (vérifié). Auth via `npm login`
+  (security key WebAuthn validée par l'utilisateur) puis publish web-OTP
+  par package (validation security key à chaque publish). Tag git
+  `v0.1.0` poussé. Installable : `npx @sentropic/agent-stats@0.1.0`.
+  Note : le push du tag déclenche `release.yml` qui échouera au step
+  publish (versions déjà publiées + `NPM_TOKEN` absent) — échec
+  inoffensif ; pour les futurs releases, ajouter le secret `NPM_TOKEN`.
 
 ---
 
