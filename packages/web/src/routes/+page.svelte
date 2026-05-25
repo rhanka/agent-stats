@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Card, Button, Select, Badge, DataTable } from '@sentropic/design-system-svelte';
+  import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
+
   type WeeklyAggregation = {
     weekStart: string;
     projectCwd: string;
@@ -86,7 +89,15 @@
     return { sessions, turns, inputTotal, outputTotal, cached, cacheHit, codexCredits, claudeUsdCents };
   });
 
-  let topProjects = $derived.by(() => {
+  let costTotalString = $derived.by(() => {
+    const parts: string[] = [];
+    if (totals.codexCredits > 0) parts.push(`${totals.codexCredits.toFixed(0)} cr`);
+    if (totals.claudeUsdCents > 0) parts.push(`$${(totals.claudeUsdCents / 100).toFixed(2)}`);
+    return parts.length ? parts.join(' + ') : '-';
+  });
+
+  // --- Top projects table ---
+  let projectRows = $derived.by<DataTableRow[]>(() => {
     const m = new Map<string, { cwd: string; tokens: number; sessions: number }>();
     for (const r of rows) {
       let acc = m.get(r.projectCwd);
@@ -97,22 +108,66 @@
       acc.tokens += totalInput(r) + r.totalUsage.outputTokens;
       acc.sessions += r.sessions;
     }
-    return [...m.values()].sort((a, b) => b.tokens - a.tokens).slice(0, 10);
+    return [...m.values()]
+      .sort((a, b) => b.tokens - a.tokens)
+      .slice(0, 10)
+      .map((p) => ({ id: p.cwd, project: p.cwd, sessions: p.sessions, tokens: fmt(p.tokens) }));
   });
+
+  const projectColumns: DataTableColumn[] = [
+    { key: 'project', label: 'Project', cell: projectCell },
+    { key: 'sessions', label: 'Sessions', align: 'end' },
+    { key: 'tokens', label: 'Tokens (in+out)', align: 'end' },
+  ];
+
+  // --- All aggregations table ---
+  let aggRows = $derived.by<DataTableRow[]>(() =>
+    rows.map((r) => ({
+      id: r.weekStart + r.projectCwd + r.tool + r.model,
+      week: r.weekStart,
+      tool: r.tool,
+      project: r.projectCwd,
+      model: r.model,
+      sessions: r.sessions,
+      turns: r.turns,
+      input: fmt(totalInput(r)),
+      output: fmt(r.totalUsage.outputTokens),
+      cost: costString(r),
+    })),
+  );
+
+  const aggColumns: DataTableColumn[] = [
+    { key: 'week', label: 'Week', sortable: true },
+    { key: 'tool', label: 'Tool', cell: toolCell, sortable: true },
+    { key: 'project', label: 'Project', cell: projectCell },
+    { key: 'model', label: 'Model', sortable: true },
+    { key: 'sessions', label: 'Sess', align: 'end', sortable: true },
+    { key: 'turns', label: 'Turns', align: 'end', sortable: true },
+    { key: 'input', label: 'In', align: 'end' },
+    { key: 'output', label: 'Out', align: 'end' },
+    { key: 'cost', label: 'Cost', align: 'end' },
+  ];
 </script>
+
+{#snippet projectCell(row: DataTableRow)}
+  <code>{row.project}</code>
+{/snippet}
+
+{#snippet toolCell(row: DataTableRow)}
+  <Badge tone={row.tool === 'claude' ? 'info' : 'success'}>{row.tool}</Badge>
+{/snippet}
 
 <h1>Overview — last {sinceDays} days</h1>
 
 <div class="controls">
-  <label for="since">Since:</label>
-  <select id="since" bind:value={sinceDays} onchange={() => load()}>
+  <Select size="sm" aria-label="Since" bind:value={sinceDays} onchange={() => load()}>
     <option value={2}>2 days</option>
     <option value={7}>7 days</option>
     <option value={14}>14 days</option>
     <option value={30}>30 days</option>
     <option value={90}>90 days</option>
-  </select>
-  <button onclick={() => load()}>Refresh</button>
+  </Select>
+  <Button variant="secondary" size="sm" onclick={() => load()}>Refresh</Button>
 </div>
 
 {#if loading}
@@ -121,92 +176,87 @@
   <p class="error">Error: {error}</p>
 {:else}
   <section class="cards">
-    <div class="card">
+    <Card>
       <div class="label">Sessions</div>
       <div class="value">{totals.sessions}</div>
-    </div>
-    <div class="card">
+    </Card>
+    <Card>
       <div class="label">Turns</div>
       <div class="value">{totals.turns}</div>
-    </div>
-    <div class="card">
+    </Card>
+    <Card>
       <div class="label">Input tokens</div>
       <div class="value">{fmt(totals.inputTotal)}</div>
       <div class="sub">{totals.cacheHit.toFixed(1)}% cache hit</div>
-    </div>
-    <div class="card">
+    </Card>
+    <Card>
       <div class="label">Output tokens</div>
       <div class="value">{fmt(totals.outputTotal)}</div>
-    </div>
-    <div class="card">
+    </Card>
+    <Card>
       <div class="label">Estimated cost</div>
-      <div class="value">
-        {#if totals.codexCredits > 0 || totals.claudeUsdCents > 0}
-          {#if totals.codexCredits > 0}{totals.codexCredits.toFixed(0)} cr{/if}
-          {#if totals.codexCredits > 0 && totals.claudeUsdCents > 0} + {/if}
-          {#if totals.claudeUsdCents > 0}${(totals.claudeUsdCents / 100).toFixed(2)}{/if}
-        {:else}-{/if}
-      </div>
-    </div>
+      <div class="value">{costTotalString}</div>
+    </Card>
   </section>
 
   <h2>Top projects</h2>
-  <table>
-    <thead>
-      <tr><th>Project</th><th>Sessions</th><th>Tokens (in+out)</th></tr>
-    </thead>
-    <tbody>
-      {#each topProjects as p (p.cwd)}
-        <tr><td><code>{p.cwd}</code></td><td>{p.sessions}</td><td>{fmt(p.tokens)}</td></tr>
-      {/each}
-      {#if topProjects.length === 0}
-        <tr><td colspan="3">No data in this window.</td></tr>
-      {/if}
-    </tbody>
-  </table>
+  <DataTable
+    columns={projectColumns}
+    rows={projectRows}
+    size="sm"
+    emptyLabel="No data in this window."
+  />
 
   <h2>All aggregations ({rows.length} rows)</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Week</th><th>Tool</th><th>Project</th><th>Model</th>
-        <th>Sess</th><th>Turns</th><th>In</th><th>Out</th><th>Cost</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each rows as r (r.weekStart + r.projectCwd + r.tool + r.model)}
-        <tr>
-          <td>{r.weekStart}</td>
-          <td>{r.tool}</td>
-          <td><code>{r.projectCwd}</code></td>
-          <td>{r.model}</td>
-          <td>{r.sessions}</td>
-          <td>{r.turns}</td>
-          <td>{fmt(totalInput(r))}</td>
-          <td>{fmt(r.totalUsage.outputTokens)}</td>
-          <td>{costString(r)}</td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
+  <DataTable
+    columns={aggColumns}
+    rows={aggRows}
+    size="sm"
+    sortable
+    pageSize={25}
+    emptyLabel="No data in this window."
+  />
 {/if}
 
 <style>
-  h1, h2 { color: #f0f6fc; }
-  .controls { margin: 16px 0; }
-  .controls label { margin-right: 8px; }
-  .controls select, .controls button {
-    background: #21262d; color: #d7dde7; border: 1px solid #30363d;
-    padding: 4px 10px; border-radius: 4px;
+  h1,
+  h2 {
+    color: var(--st-semantic-text-primary);
   }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0 24px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px 16px; }
-  .card .label { font-size: 12px; color: #8b949e; }
-  .card .value { font-size: 22px; font-weight: 600; margin-top: 4px; }
-  .card .sub { font-size: 11px; color: #58a6ff; margin-top: 4px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  th, td { padding: 6px 10px; border-bottom: 1px solid #30363d; text-align: left; font-size: 14px; }
-  th { color: #8b949e; font-weight: 500; }
-  code { background: #161b22; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
-  .error { color: #f85149; }
+  .controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin: 16px 0 24px;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 16px 0 24px;
+  }
+  .label {
+    font-size: 12px;
+    color: var(--st-semantic-text-muted, var(--st-semantic-text-secondary));
+  }
+  .value {
+    font-size: 22px;
+    font-weight: 600;
+    margin-top: 4px;
+    color: var(--st-semantic-text-primary);
+  }
+  .sub {
+    font-size: 11px;
+    color: var(--st-semantic-text-link, var(--st-semantic-text-secondary));
+    margin-top: 4px;
+  }
+  code {
+    background: var(--st-semantic-surface-subtle, var(--st-semantic-surface-raised));
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .error {
+    color: var(--st-semantic-status-error, #f85149);
+  }
 </style>

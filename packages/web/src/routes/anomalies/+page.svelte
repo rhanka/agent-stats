@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Select, Button, Badge, DataTable } from '@sentropic/design-system-svelte';
+  import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
+
   type Anomaly = {
     sessionId: string;
     tool: 'claude' | 'codex';
@@ -31,61 +34,87 @@
   $effect(() => {
     void load();
   });
+
+  const severityTone = (s: Anomaly['severity']): 'error' | 'warning' | 'info' =>
+    s === 'high' ? 'error' : s === 'medium' ? 'warning' : 'info';
+
+  let anomalyRows = $derived.by<DataTableRow[]>(() =>
+    items.map((a) => ({
+      id: a.sessionId + a.type,
+      severity: a.severity,
+      type: a.type,
+      tool: a.tool,
+      project: a.projectCwd,
+      session: a.sessionId.slice(0, 8),
+      evidence: JSON.stringify(a.evidence),
+    })),
+  );
+
+  const columns: DataTableColumn[] = [
+    { key: 'severity', label: 'Severity', cell: severityCell, sortable: true },
+    { key: 'type', label: 'Type', sortable: true },
+    { key: 'tool', label: 'Tool', cell: toolCell, sortable: true },
+    { key: 'project', label: 'Project', cell: monoCell },
+    { key: 'session', label: 'Session', cell: monoCell },
+    { key: 'evidence', label: 'Evidence', cell: monoCell },
+  ];
 </script>
+
+{#snippet severityCell(row: DataTableRow)}
+  <Badge tone={severityTone(row.severity as Anomaly['severity'])}>{row.severity}</Badge>
+{/snippet}
+
+{#snippet toolCell(row: DataTableRow)}
+  <Badge tone={row.tool === 'claude' ? 'info' : 'success'}>{row.tool}</Badge>
+{/snippet}
+
+{#snippet monoCell(row: DataTableRow, col: DataTableColumn)}
+  <code>{row[col.key]}</code>
+{/snippet}
 
 <h1>Anomalies — last {sinceDays} days</h1>
 
 <div class="controls">
-  <label for="since">Since:</label>
-  <select id="since" bind:value={sinceDays} onchange={() => load()}>
+  <Select size="sm" aria-label="Since" bind:value={sinceDays} onchange={() => load()}>
     <option value={2}>2 days</option>
     <option value={7}>7 days</option>
     <option value={14}>14 days</option>
     <option value={30}>30 days</option>
-  </select>
-  <button onclick={() => load()}>Refresh</button>
+  </Select>
+  <Button variant="secondary" size="sm" onclick={() => load()}>Refresh</Button>
 </div>
 
 {#if loading}
   <p>Loading…</p>
 {:else if error}
   <p class="error">Error: {error}</p>
-{:else if items.length === 0}
-  <p>No anomalies detected.</p>
 {:else}
-  <table>
-    <thead>
-      <tr><th>Severity</th><th>Type</th><th>Tool</th><th>Project</th><th>Session</th><th>Evidence</th></tr>
-    </thead>
-    <tbody>
-      {#each items as a (a.sessionId + a.type)}
-        <tr>
-          <td><span class="sev sev-{a.severity}">{a.severity}</span></td>
-          <td>{a.type}</td>
-          <td>{a.tool}</td>
-          <td><code>{a.projectCwd}</code></td>
-          <td><code>{a.sessionId.slice(0, 8)}</code></td>
-          <td><code>{JSON.stringify(a.evidence)}</code></td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
+  <DataTable
+    {columns}
+    rows={anomalyRows}
+    size="sm"
+    sortable
+    emptyLabel="No anomalies detected."
+  />
 {/if}
 
 <style>
-  h1 { color: #f0f6fc; }
-  .controls { margin: 16px 0; }
-  .controls select, .controls button {
-    background: #21262d; color: #d7dde7; border: 1px solid #30363d;
-    padding: 4px 10px; border-radius: 4px;
+  h1 {
+    color: var(--st-semantic-text-primary);
   }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  th, td { padding: 6px 10px; border-bottom: 1px solid #30363d; text-align: left; font-size: 14px; }
-  th { color: #8b949e; font-weight: 500; }
-  code { background: #161b22; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
-  .sev { padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 500; }
-  .sev-high { background: #f8514920; color: #f85149; }
-  .sev-medium { background: #d2992020; color: #d29920; }
-  .sev-low { background: #58a6ff20; color: #58a6ff; }
-  .error { color: #f85149; }
+  .controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin: 16px 0 24px;
+  }
+  code {
+    background: var(--st-semantic-surface-subtle, var(--st-semantic-surface-raised));
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .error {
+    color: var(--st-semantic-status-error, #f85149);
+  }
 </style>
