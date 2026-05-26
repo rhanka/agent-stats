@@ -24,6 +24,7 @@
       reasoningTokens: number;
     };
     estimatedCost: { codexCredits: number; claudeUsdCents: number; unknown: number };
+    rateLimitMax?: { primaryPercent: number; secondaryPercent: number };
   };
 
   let rows: WeeklyAggregation[] = $state([]);
@@ -92,14 +93,34 @@
       codexCredits += r.estimatedCost.codexCredits;
       claudeUsdCents += r.estimatedCost.claudeUsdCents;
     }
+    let peak5h = 0;
+    let peak7d = 0;
+    for (const r of rows) {
+      if (r.rateLimitMax) {
+        peak5h = Math.max(peak5h, r.rateLimitMax.primaryPercent);
+        peak7d = Math.max(peak7d, r.rateLimitMax.secondaryPercent);
+      }
+    }
     const cacheHit = inputTotal > 0 ? (cached / inputTotal) * 100 : 0;
-    return { sessions, turns, inputTotal, outputTotal, cached, cacheHit, codexCredits, claudeUsdCents };
+    return {
+      sessions,
+      turns,
+      inputTotal,
+      outputTotal,
+      cached,
+      cacheHit,
+      codexCredits,
+      claudeUsdCents,
+      peak5h,
+      peak7d,
+    };
   });
 
   let costTotalString = $derived.by(() => {
     const parts: string[] = [];
     if (totals.codexCredits > 0) parts.push(`${totals.codexCredits.toFixed(0)} cr`);
-    if (totals.claudeUsdCents > 0) parts.push(`$${(totals.claudeUsdCents / 100).toFixed(2)}`);
+    // Claude $ is notional (API list price), not real spend on a flat-rate Max plan.
+    if (totals.claudeUsdCents > 0) parts.push(`~$${(totals.claudeUsdCents / 100).toFixed(2)}`);
     return parts.length ? parts.join(' + ') : '-';
   });
 
@@ -211,6 +232,12 @@
     <Card>
       <div class="label">Estimated cost</div>
       <div class="value">{costTotalString}</div>
+      <div class="sub">Codex = credits · Claude ~$ notional (flat-rate Max)</div>
+    </Card>
+    <Card>
+      <div class="label">Codex quota peak</div>
+      <div class="value">{totals.peak7d.toFixed(0)}%</div>
+      <div class="sub">7-day window · 5h peak {totals.peak5h.toFixed(0)}%</div>
     </Card>
   </section>
 
