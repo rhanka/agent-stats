@@ -57,6 +57,15 @@ describe('parseCodexRollout', () => {
     expect(first.rateLimit?.secondaryPercent).toBe(40);
   });
 
+  it('captures the real model from turn_context (not the provider) on turns', async () => {
+    const events = await collectAll();
+    const turns = events.filter((e) => e.kind === 'turn');
+    for (const t of turns) {
+      if (t.kind !== 'turn') throw new Error('unreachable');
+      expect(t.model).toBe('gpt-5.4');
+    }
+  });
+
   it('emits a compaction event for context_compacted', async () => {
     const events = await collectAll();
     const comps = events.filter((e) => e.kind === 'compaction');

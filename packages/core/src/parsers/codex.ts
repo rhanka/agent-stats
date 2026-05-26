@@ -182,10 +182,20 @@ interface CodexSessionMetaPayload {
   thread_source?: string;
 }
 
+interface CodexTurnContextPayload {
+  model?: string;
+  cwd?: string;
+}
+
 interface CodexLine {
   type?: string;
   timestamp?: string;
-  payload?: CodexEventMsgPayload | CodexResponseItemPayload | CodexSessionMetaPayload | unknown;
+  payload?:
+    | CodexEventMsgPayload
+    | CodexResponseItemPayload
+    | CodexSessionMetaPayload
+    | CodexTurnContextPayload
+    | unknown;
 }
 
 function normalizeCodexUsage(raw: CodexUsageRaw | undefined): Usage {
@@ -267,7 +277,8 @@ export async function* parseCodexRollout(
         sessionId,
         projectCwd,
         kind: 'session_start',
-        ...(p.model_provider ? { model: p.model_provider } : {}),
+        // NB: `model_provider` is just "openai" — the real model (gpt-5.x)
+        // arrives later in `turn_context` events, so we don't set it here.
         ...(parentId ? { forkedFromId: parentId } : {}),
         ...(typeof depth === 'number' ? { subagentDepth: depth } : {}),
         ...(p.agent_nickname ? { agentNickname: p.agent_nickname } : {}),
@@ -275,6 +286,15 @@ export async function* parseCodexRollout(
         isSubagent: isSub,
       };
       startEmitted = true;
+      continue;
+    }
+
+    if (rec.type === 'turn_context') {
+      // The actual model (gpt-5.4, gpt-5.3-codex, gpt-5.5, …) is declared per
+      // turn here, not in session_meta. Track it so turns carry the right model
+      // and the rate card can estimate cost.
+      const p = (rec.payload ?? {}) as CodexTurnContextPayload;
+      if (typeof p.model === 'string' && p.model) model = p.model;
       continue;
     }
 
