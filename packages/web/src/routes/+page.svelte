@@ -27,12 +27,14 @@
     };
     estimatedCost: { codexCredits: number; claudeUsdCents: number; unknown: number };
     rateLimitMax?: { primaryPercent: number; secondaryPercent: number };
+    repoUrl?: string;
   };
 
   let rows: WeeklyAggregation[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
-  let demo = $state(false);
+  let published = $state(false);
+  let publishedAt: string | null = $state(null);
 
   // Default: last 7 days.
   let sinceDays = $state(7);
@@ -40,20 +42,27 @@
   async function load(): Promise<void> {
     loading = true;
     error = null;
-    demo = false;
+    published = false;
     try {
       const since = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
       const res = await fetch(`/api/stats?since=${encodeURIComponent(since)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       rows = (await res.json()) as WeeklyAggregation[];
     } catch (e) {
-      // No live API (e.g. the static public site): fall back to a bundled,
-      // anonymized demo dataset so the dashboard still demonstrates the UI.
+      // No live API (the static public site): fall back to the published
+      // snapshot — the maintainer's own usage, computed locally and committed,
+      // with projects relabelled to their public git repos.
       try {
-        const demoRes = await fetch(`${base}/demo-stats.json`);
-        if (!demoRes.ok) throw new Error(`demo HTTP ${demoRes.status}`);
-        rows = (await demoRes.json()) as WeeklyAggregation[];
-        demo = true;
+        const snap = await fetch(`${base}/published-stats.json`);
+        if (!snap.ok) throw new Error(`snapshot HTTP ${snap.status}`);
+        rows = (await snap.json()) as WeeklyAggregation[];
+        published = true;
+        try {
+          const meta = await fetch(`${base}/published-meta.json`);
+          if (meta.ok) publishedAt = ((await meta.json()) as { generatedAt?: string }).generatedAt ?? null;
+        } catch {
+          /* meta optional */
+        }
       } catch {
         error = e instanceof Error ? e.message : String(e);
       }
@@ -90,6 +99,15 @@
     return parts.length ? parts.join(' + ') : '-';
   }
 
+  // The published snapshot is a fixed 180-day file, so the "since" selector
+  // can't hit an API — filter it client-side by weekStart instead. In live
+  // mode the API already filtered, so this is a passthrough.
+  let displayRows = $derived.by<WeeklyAggregation[]>(() => {
+    if (!published) return rows;
+    const cutoff = new Date(Date.now() - sinceDays * 86_400_000).toISOString().slice(0, 10);
+    return rows.filter((r) => r.weekStart >= cutoff);
+  });
+
   let totals = $derived.by(() => {
     let sessions = 0;
     let turns = 0;
@@ -98,7 +116,7 @@
     let cached = 0;
     let codexCredits = 0;
     let claudeUsdCents = 0;
-    for (const r of rows) {
+    for (const r of displayRows) {
       sessions += r.sessions;
       turns += r.turns;
       inputTotal += totalInput(r);
@@ -109,7 +127,7 @@
     }
     let peak5h = 0;
     let peak7d = 0;
-    for (const r of rows) {
+    for (const r of displayRows) {
       if (r.rateLimitMax) {
         peak5h = Math.max(peak5h, r.rateLimitMax.primaryPercent);
         peak7d = Math.max(peak7d, r.rateLimitMax.secondaryPercent);
@@ -140,11 +158,12 @@
 
   // --- Top projects table ---
   let projectRows = $derived.by<DataTableRow[]>(() => {
-    const m = new Map<string, { cwd: string; tokens: number; sessions: number }>();
-    for (const r of rows) {
+    const m = new Map<string, { cwd: string; url?: string; tokens: number; sessions: number }>();
+    for (const r of displayRows) {
       let acc = m.get(r.projectCwd);
       if (!acc) {
         acc = { cwd: r.projectCwd, tokens: 0, sessions: 0 };
+        if (r.repoUrl) acc.url = r.repoUrl;
         m.set(r.projectCwd, acc);
       }
       acc.tokens += totalInput(r) + r.totalUsage.outputTokens;
@@ -153,7 +172,13 @@
     return [...m.values()]
       .sort((a, b) => b.tokens - a.tokens)
       .slice(0, 10)
-      .map((p) => ({ id: p.cwd, project: p.cwd, sessions: p.sessions, tokens: fmt(p.tokens) }));
+      .map((p) => ({
+        id: p.cwd,
+        project: p.cwd,
+        repoUrl: p.url ?? '',
+        sessions: p.sessions,
+        tokens: fmt(p.tokens),
+      }));
   });
 
   const projectColumns: DataTableColumn[] = [
@@ -164,11 +189,12 @@
 
   // --- All aggregations table ---
   let aggRows = $derived.by<DataTableRow[]>(() =>
-    rows.map((r) => ({
+    displayRows.map((r) => ({
       id: r.weekStart + r.projectCwd + r.tool + r.model,
       week: r.weekStart,
       tool: r.tool,
       project: r.projectCwd,
+      repoUrl: r.repoUrl ?? '',
       model: r.model,
       sessions: r.sessions,
       turns: r.turns,
@@ -192,7 +218,11 @@
 </script>
 
 {#snippet projectCell(row: DataTableRow)}
-  <code>{row.project}</code>
+  {#if row.repoUrl}
+    <a href={String(row.repoUrl)} target="_blank" rel="noreferrer noopener"><code>{row.project}</code></a>
+  {:else}
+    <code>{row.project}</code>
+  {/if}
 {/snippet}
 
 {#snippet toolCell(row: DataTableRow)}
@@ -225,12 +255,12 @@
     {/snippet}
   </EmptyState>
 {:else}
-  {#if demo}
+  {#if published}
     <div class="banner">
       <Alert
         tone="info"
-        title="Demo data"
-        message="This is an anonymized sample dataset. Run `npx @sentropic/agent-stats web` locally to analyze your own Claude Code + Codex sessions."
+        title="Published snapshot — real usage"
+        message={`The maintainer's own Claude Code + Codex usage, computed locally and committed (projects link to their public git repos)${publishedAt ? `. Generated ${publishedAt.slice(0, 10)}` : ''}. Run \`npx @sentropic/agent-stats web\` for your own.`}
       />
     </div>
   {/if}
@@ -272,7 +302,7 @@
     emptyLabel="No data in this window."
   />
 
-  <h2>All aggregations ({rows.length} rows)</h2>
+  <h2>All aggregations ({displayRows.length} rows)</h2>
   <DataTable
     columns={aggColumns}
     rows={aggRows}
@@ -323,6 +353,13 @@
     padding: 2px 6px;
     border-radius: 3px;
     font-size: 12px;
+  }
+  a code {
+    color: var(--st-semantic-text-link, var(--st-semantic-text-primary));
+    cursor: pointer;
+  }
+  a:hover code {
+    text-decoration: underline;
   }
   .hint {
     font-size: 12px;
