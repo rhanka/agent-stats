@@ -47,8 +47,9 @@
     color: var(--st-semantic-text-primary);
   }
   /* The DS Header centers its navigation; align it left next to the title,
-     matching the other Sentropic apps. */
-  :global(.st-header__navigation) {
+     matching the other Sentropic apps. Scoped under [data-st-theme] to beat
+     the component's own `justify-content: center` on specificity. */
+  :global([data-st-theme] .st-header__navigation) {
     justify-content: flex-start;
     gap: 16px;
     padding-left: 8px;

@@ -84,7 +84,8 @@
       parts.push(`${r.estimatedCost.codexCredits.toFixed(0)} cr`);
     }
     if (r.estimatedCost.claudeUsdCents > 0) {
-      parts.push(`$${(r.estimatedCost.claudeUsdCents / 100).toFixed(2)}`);
+      // notional API-equivalent, not real spend on a flat-rate Max plan
+      parts.push(`~$${(r.estimatedCost.claudeUsdCents / 100).toFixed(2)}`);
     }
     return parts.length ? parts.join(' + ') : '-';
   }
