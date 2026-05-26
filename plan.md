@@ -215,19 +215,27 @@ Vérifications faites sur **données réelles**, pas sur des specs.
       cramé") dans `stats`, `report` et une carte web. Note cache-replay.
       Réel mesuré : "Codex quota peak 5h 100% · 7d 99%".
 
-**Lot 11.3 — Web feedé** (1/1, 100%)
+**Lot 11.3 — Web feedé avec les VRAIES données publiées** (1/1, 100%)
 
-- [x] Le site public n'a pas de backend `/api/*` (données privées) → était
-      vide. Fallback sur un **dataset démo anonymisé** bundlé
-      (`static/demo-*.json`) + bannière "Demo data". En local l'API réelle
-      gagne ; en public le dashboard est désormais peuplé (vérifié live au
-      screenshot).
+- [x] (révisé) L'utilisateur ne veut PAS de données fictives : il publie ses
+      **vraies** données, calculées ici. `scripts/build-published-data.mjs`
+      agrège 180j via le CLI et écrit `static/published-{stats,anomalies,
+      meta}.json`. Chaque projet est relabellisé vers son **remote git
+      public** (`owner/repo` + URL cliquable) ; les projets sans upstream
+      public sont **anonymisés `private-N`** (aucun chemin/username/nom privé
+      publié — vérifié). Lignes fusionnées par (semaine×repo×outil×modèle).
+      Le web charge ce snapshot en fallback (bannière "Published snapshot —
+      real usage", filtre client-side, liens GitHub). Régénération :
+      `node packages/web/scripts/build-published-data.mjs`. Vérifié live :
+      29 repos publics liés, 27 projets privés masqués.
 
 **Lot 11.4 — Polish design system** (1/1, 100%)
 
 - [x] Comparaison objective vs app Sentropic de réf (Top AI Ideas) :
       polices/palette/composants alignés. Nav du `Header` re-alignée à
-      gauche (override de specificity), `~$` cohérent table + carte.
+      gauche, `~$` cohérent table + carte. **Header désaligné** corrigé :
+      mesuré au pixel (titre à 16px, contenu à 210px) → gouttière partagée
+      32px header+contenu, contenu pleine largeur. Vérifié live.
 
 ### WP9 — CI + release (status: 4/4, 100%)
 
