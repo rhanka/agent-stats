@@ -62,9 +62,16 @@
   :global([data-st-theme] nav a:hover) {
     text-decoration: underline;
   }
+  /* Use the same horizontal gutter for the header and the page content so the
+     title lines up with the page heading (the header is full-bleed; the body
+     was a narrow centered column, which read as misaligned). */
+  :global([data-st-theme] .st-header) {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
   main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 24px;
+    max-width: 1400px;
+    margin: 0;
+    padding: 32px;
   }
 </style>

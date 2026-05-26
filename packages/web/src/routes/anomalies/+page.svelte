@@ -17,30 +17,31 @@
     type: string;
     severity: 'low' | 'medium' | 'high';
     evidence: Record<string, number | string>;
+    repoUrl?: string;
   };
 
   let items: Anomaly[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
-  let demo = $state(false);
+  let published = $state(false);
   let sinceDays = $state(7);
 
   async function load(): Promise<void> {
     loading = true;
     error = null;
-    demo = false;
+    published = false;
     try {
       const since = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
       const res = await fetch(`/api/anomalies?since=${encodeURIComponent(since)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       items = (await res.json()) as Anomaly[];
     } catch (e) {
-      // No live API (static public site): fall back to bundled demo data.
+      // No live API (static public site): fall back to the published snapshot.
       try {
-        const demoRes = await fetch(`${base}/demo-anomalies.json`);
-        if (!demoRes.ok) throw new Error(`demo HTTP ${demoRes.status}`);
-        items = (await demoRes.json()) as Anomaly[];
-        demo = true;
+        const snap = await fetch(`${base}/published-anomalies.json`);
+        if (!snap.ok) throw new Error(`snapshot HTTP ${snap.status}`);
+        items = (await snap.json()) as Anomaly[];
+        published = true;
       } catch {
         error = e instanceof Error ? e.message : String(e);
       }
@@ -63,6 +64,7 @@
       type: a.type,
       tool: a.tool,
       project: a.projectCwd,
+      repoUrl: a.repoUrl ?? '',
       session: a.sessionId.slice(0, 8),
       evidence: JSON.stringify(a.evidence),
     })),
@@ -72,7 +74,7 @@
     { key: 'severity', label: 'Severity', cell: severityCell, sortable: true },
     { key: 'type', label: 'Type', sortable: true },
     { key: 'tool', label: 'Tool', cell: toolCell, sortable: true },
-    { key: 'project', label: 'Project', cell: monoCell },
+    { key: 'project', label: 'Project', cell: projectCell },
     { key: 'session', label: 'Session', cell: monoCell },
     { key: 'evidence', label: 'Evidence', cell: monoCell },
   ];
@@ -88,6 +90,14 @@
 
 {#snippet monoCell(row: DataTableRow, col: DataTableColumn)}
   <code>{row[col.key]}</code>
+{/snippet}
+
+{#snippet projectCell(row: DataTableRow)}
+  {#if row.repoUrl}
+    <a href={String(row.repoUrl)} target="_blank" rel="noreferrer noopener"><code>{row.project}</code></a>
+  {:else}
+    <code>{row.project}</code>
+  {/if}
 {/snippet}
 
 <h1>Anomalies — last {sinceDays} days</h1>
@@ -115,12 +125,12 @@
     {/snippet}
   </EmptyState>
 {:else}
-  {#if demo}
+  {#if published}
     <div class="banner">
       <Alert
         tone="info"
-        title="Demo data"
-        message="This is an anonymized sample dataset. Run `npx @sentropic/agent-stats web` locally to analyze your own sessions."
+        title="Published snapshot — real usage"
+        message="The maintainer's own sessions, computed locally and committed. Run `npx @sentropic/agent-stats web` for your own."
       />
     </div>
   {/if}
@@ -151,6 +161,13 @@
     padding: 2px 6px;
     border-radius: 3px;
     font-size: 12px;
+  }
+  a code {
+    color: var(--st-semantic-text-link, var(--st-semantic-text-primary));
+    cursor: pointer;
+  }
+  a:hover code {
+    text-decoration: underline;
   }
   .hint {
     font-size: 12px;
