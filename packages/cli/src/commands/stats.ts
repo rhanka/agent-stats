@@ -35,6 +35,19 @@ function parseDate(value: string | undefined, label: string): Date | undefined {
   return d;
 }
 
+/**
+ * Format the estimated cost of a row in its native currency:
+ *   - Codex → credits (`cr`), the actual quota currency.
+ *   - Claude → notional API-equivalent dollars (`~$`). On a flat-rate Max
+ *     plan this is NOT real spend — it's the pay-as-you-go list price the
+ *     same tokens would have cost, shown only for cross-tool comparison.
+ */
+function formatCost(r: WeeklyAggregation): string {
+  if (r.estimatedCost.codexCredits > 0) return `${r.estimatedCost.codexCredits.toFixed(1)} cr`;
+  if (r.estimatedCost.claudeUsdCents > 0) return `~$${(r.estimatedCost.claudeUsdCents / 100).toFixed(2)}`;
+  return '-';
+}
+
 function renderTable(rows: WeeklyAggregation[]): string {
   if (rows.length === 0) return '(no data)';
   const headers = [
@@ -51,12 +64,6 @@ function renderTable(rows: WeeklyAggregation[]): string {
   ];
   const lines: string[][] = [headers];
   for (const r of rows) {
-    const cost =
-      r.estimatedCost.codexCredits > 0
-        ? `${r.estimatedCost.codexCredits.toFixed(1)} cr`
-        : r.estimatedCost.claudeUsdCents > 0
-          ? `$${(r.estimatedCost.claudeUsdCents / 100).toFixed(2)}`
-          : '-';
     lines.push([
       r.weekStart,
       r.tool,
@@ -67,7 +74,7 @@ function renderTable(rows: WeeklyAggregation[]): string {
       String(r.totalUsage.newInputTokens),
       String(r.totalUsage.cachedInputTokens),
       String(r.totalUsage.outputTokens),
-      cost,
+      formatCost(r),
     ]);
   }
   // compute column widths
@@ -76,7 +83,39 @@ function renderTable(rows: WeeklyAggregation[]): string {
     l.map((c, i) => (i === 2 ? c.padEnd(widths[i] ?? 0) : c.padStart(widths[i] ?? 0))).join('  ');
   const out = [fmt(lines[0] ?? []), widths.map((w) => '-'.repeat(w)).join('  ')];
   for (let i = 1; i < lines.length; i++) out.push(fmt(lines[i] ?? []));
+  out.push('', renderSummary(rows));
   return out.join('\n');
+}
+
+/**
+ * Honest headline below the table: total Codex credits, the peak rate-limit
+ * window usage actually observed (the real "how much quota did I burn"), and
+ * the notional Claude API-equivalent — clearly labelled as such.
+ */
+function renderSummary(rows: WeeklyAggregation[]): string {
+  let credits = 0;
+  let usdCents = 0;
+  let peak5h = 0;
+  let peak7d = 0;
+  for (const r of rows) {
+    credits += r.estimatedCost.codexCredits;
+    usdCents += r.estimatedCost.claudeUsdCents;
+    if (r.rateLimitMax) {
+      peak5h = Math.max(peak5h, r.rateLimitMax.primaryPercent);
+      peak7d = Math.max(peak7d, r.rateLimitMax.secondaryPercent);
+    }
+  }
+  const parts = [
+    `Codex: ${credits.toFixed(0)} credits`,
+    `Codex quota peak observed: 5h ${peak5h.toFixed(0)}% · 7d ${peak7d.toFixed(0)}%`,
+    `Claude: ~$${(usdCents / 100).toFixed(2)} (API-equiv, notional on flat-rate Max)`,
+  ];
+  return [
+    'Summary',
+    '  ' + parts.join('\n  '),
+    '  Note: `cached` tokens include cache replay (a long parent thread re-billed',
+    '  at each subagent fork), which inflates volume without new reasoning.',
+  ].join('\n');
 }
 
 export async function runStats(opts: StatsCommandOptions = {}): Promise<StatsResult> {

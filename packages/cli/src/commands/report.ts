@@ -73,6 +73,10 @@ function renderWeek(weekStart: string, rows: WeeklyAggregation[], top: number): 
       acc.totalUsage.reasoningTokens += r.totalUsage.reasoningTokens;
       acc.codexCredits += r.estimatedCost.codexCredits;
       acc.claudeUsdCents += r.estimatedCost.claudeUsdCents;
+      if (r.rateLimitMax) {
+        acc.peak5h = Math.max(acc.peak5h, r.rateLimitMax.primaryPercent);
+        acc.peak7d = Math.max(acc.peak7d, r.rateLimitMax.secondaryPercent);
+      }
       return acc;
     },
     {
@@ -89,6 +93,8 @@ function renderWeek(weekStart: string, rows: WeeklyAggregation[], top: number): 
       },
       codexCredits: 0,
       claudeUsdCents: 0,
+      peak5h: 0,
+      peak7d: 0,
     },
   );
   const cacheRatio = cacheEfficiency(totals.totalUsage);
@@ -111,8 +117,16 @@ function renderWeek(weekStart: string, rows: WeeklyAggregation[], top: number): 
   const costParts: string[] = [];
   if (totals.codexCredits > 0) costParts.push(`${totals.codexCredits.toFixed(0)} Codex credits`);
   if (totals.claudeUsdCents > 0)
-    costParts.push(`$${(totals.claudeUsdCents / 100).toFixed(2)} Claude USD`);
+    costParts.push(`~$${(totals.claudeUsdCents / 100).toFixed(2)} Claude API-equiv`);
   lines.push(`- Estimated cost: ${costParts.length ? costParts.join(' + ') : '-'}`);
+  if (totals.peak7d > 0 || totals.peak5h > 0) {
+    lines.push(
+      `- Codex quota peak observed: 5h window ${totals.peak5h.toFixed(0)}% · 7d window ${totals.peak7d.toFixed(0)}%`,
+    );
+  }
+  lines.push(
+    '- _Claude $ is notional (pay-as-you-go list price), not real spend on a flat-rate Max plan._',
+  );
   lines.push('');
 
   // Top projects

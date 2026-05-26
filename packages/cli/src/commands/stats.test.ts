@@ -72,6 +72,14 @@ describe('runStats', () => {
     expect(output).toMatch(/cost/);
   });
 
+  it('appends an honest summary (credits, quota peak, notional Claude $)', async () => {
+    const { output } = await runStats({ claudeProjectsDir, codexDbPath, format: 'table' });
+    expect(output).toMatch(/Summary/);
+    expect(output).toMatch(/credits/);
+    expect(output).toMatch(/quota peak observed/);
+    expect(output).toMatch(/notional on flat-rate Max/);
+  });
+
   it('respects the tool filter', async () => {
     const { rows } = await runStats({ claudeProjectsDir, codexDbPath, tool: 'claude' });
     expect(rows.every((r) => r.tool === 'claude')).toBe(true);
