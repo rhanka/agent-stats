@@ -193,6 +193,42 @@ jour le plan.md (single source of truth living document).
   `st-button`, `st-card`, `st-field`, `DataTable`) + vars de thème bundlés
   dans le client `_app/`.
 
+### WP11 — Corrections post-revue (status: 4/4, 100%)
+
+Issues levées par l'utilisateur ("design pas aligné, stats pas feedées, je
+doute du 98%") — le 98% comptait des cases, pas la valeur fonctionnelle.
+Vérifications faites sur **données réelles**, pas sur des specs.
+
+**Lot 11.1 — Fix modèle/coût Codex** (1/1, 100%)
+
+- [x] Le parser lisait `model_provider` ("openai") et laissait les turns à
+      "unknown" → `resolveRates` ne matchait jamais → **coût Codex = 0** (le
+      cœur de l'analyse quota). Fix : parser les events `turn_context.model`
+      (gpt-5.4 / gpt-5.3-codex / gpt-5.5 / …). Vérifié réel : lignes Codex
+      avec vrai modèle + crédits. +1 test.
+
+**Lot 11.2 — Métrique coût/quota honnête** (1/1, 100%)
+
+- [x] Codex en crédits (devise quota), Claude en `~$` explicitement
+      **notionnel** (list price API, pas une dépense sur forfait Max flat).
+      Surface du `rateLimitMax` déjà capté (pics fenêtres 5h / 7j = "% quota
+      cramé") dans `stats`, `report` et une carte web. Note cache-replay.
+      Réel mesuré : "Codex quota peak 5h 100% · 7d 99%".
+
+**Lot 11.3 — Web feedé** (1/1, 100%)
+
+- [x] Le site public n'a pas de backend `/api/*` (données privées) → était
+      vide. Fallback sur un **dataset démo anonymisé** bundlé
+      (`static/demo-*.json`) + bannière "Demo data". En local l'API réelle
+      gagne ; en public le dashboard est désormais peuplé (vérifié live au
+      screenshot).
+
+**Lot 11.4 — Polish design system** (1/1, 100%)
+
+- [x] Comparaison objective vs app Sentropic de réf (Top AI Ideas) :
+      polices/palette/composants alignés. Nav du `Header` re-alignée à
+      gauche (override de specificity), `~$` cohérent table + carte.
+
 ### WP9 — CI + release (status: 4/4, 100%)
 
 - [x] Coverage report dans CI (`@vitest/coverage-v8`, upload artifact)
@@ -216,7 +252,13 @@ jour le plan.md (single source of truth living document).
 | 7         | Phase 2 LLM          |      5 |      5 |    100% | completed   |
 | 9         | CI + release         |      4 |      4 |    100% | completed   |
 | 10        | Pages + DS Sentropic |      5 |      5 |    100% | completed   |
-| **Total** |                      | **66** | **65** | **98%** |             |
+| 11        | Corrections post-revue |    4 |      4 |    100% | completed   |
+| **Total** |                      | **70** | **69** | **99%** |             |
+
+> ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
+> utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés
+> et corrigés (coût Codex à 0, dashboard public vide) — le 98% précédent
+> était trompeur. Reste 1 item ouvert : WP6 patterns YAML (différé).
 
 Ordre validé : WP2 → 3 → 4 → 6 → 5 → 8 → 7 → 9.
 
@@ -347,6 +389,13 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   statique = pas de runtime cookie). Vérifié : `npm audit` **0 vuln**,
   77/77 tests verts (vitest 4), lint clean, web typecheck 0 erreur,
   web build OK avec `cookie@0.7.2`.
+- 2026-05-25 : **WP11 — revue utilisateur ("je doute du 98%").** 2 bugs
+  fonctionnels trouvés sur données réelles et corrigés : (1) coût Codex
+  toujours 0 car le parser ne lisait pas `turn_context.model` ; (2)
+  dashboard public vide (pas de backend). + métrique coût honnête (crédits
+  Codex / `~$` notionnel Claude / pic quota 5h-7j) et polish DS. 79 tests
+  verts. Live peuplé : https://agent-stats.sent-tech.ca/. Leçon : le % de
+  cases cochées ≠ valeur livrée — toujours vérifier sur données réelles.
 
 ---
 
