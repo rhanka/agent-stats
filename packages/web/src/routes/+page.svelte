@@ -189,8 +189,10 @@
 
   // --- All aggregations table ---
   let aggRows = $derived.by<DataTableRow[]>(() =>
-    displayRows.map((r) => ({
-      id: r.weekStart + r.projectCwd + r.tool + r.model,
+    displayRows.map((r, i) => ({
+      // index keeps the key unique even when several local paths collapse to
+      // the same public repo (e.g. a repo + its worktree) in the same bucket.
+      id: `${r.weekStart}|${r.projectCwd}|${r.tool}|${r.model}|${i}`,
       week: r.weekStart,
       tool: r.tool,
       project: r.projectCwd,
