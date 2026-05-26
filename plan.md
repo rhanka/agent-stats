@@ -339,6 +339,14 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   (fallback SPA) + `prerender=true` sur `+layout.ts` → chaque route est
   un fichier statique (vérifié live : `/` 200, `/anomalies` 200,
   route inconnue 404).
+- 2026-05-25 : **Vulnérabilités Dependabot résolues (3 → 0).**
+  Toutes dev-only/transitives. Bump `vitest`/`@vitest/coverage-v8`
+  `^2 → ^4.1.7` (corrige les 2 medium vite/esbuild via le test tooling) ;
+  `overrides.cookie ^0.7.0` (clean reinstall) corrige les 3 low cookie
+  tirées par `@sveltejs/kit` (aucun fix upstream, mais sortie prérendue
+  statique = pas de runtime cookie). Vérifié : `npm audit` **0 vuln**,
+  77/77 tests verts (vitest 4), lint clean, web typecheck 0 erreur,
+  web build OK avec `cookie@0.7.2`.
 
 ---
 
