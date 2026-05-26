@@ -1,0 +1,118 @@
+[
+  {
+    "weekStart": "2026-05-11",
+    "projectCwd": "~/src/project-alpha",
+    "tool": "claude",
+    "model": "claude-opus-4-7",
+    "sessions": 6,
+    "turns": 1420,
+    "totalUsage": {
+      "newInputTokens": 84000,
+      "cachedInputTokens": 312000000,
+      "cacheWriteTokens": 4100000,
+      "outputTokens": 1180000,
+      "reasoningTokens": 0
+    },
+    "estimatedCost": { "codexCredits": 0, "claudeUsdCents": 96000, "unknown": 0 }
+  },
+  {
+    "weekStart": "2026-05-11",
+    "projectCwd": "~/src/project-alpha",
+    "tool": "codex",
+    "model": "gpt-5.5",
+    "sessions": 9,
+    "turns": 880,
+    "totalUsage": {
+      "newInputTokens": 3200000,
+      "cachedInputTokens": 98000000,
+      "cacheWriteTokens": 0,
+      "outputTokens": 240000,
+      "reasoningTokens": 41000
+    },
+    "estimatedCost": { "codexCredits": 1820, "claudeUsdCents": 0, "unknown": 0 },
+    "rateLimitMax": { "primaryPercent": 88, "secondaryPercent": 71 }
+  },
+  {
+    "weekStart": "2026-05-11",
+    "projectCwd": "~/src/project-beta",
+    "tool": "codex",
+    "model": "gpt-5.4-mini",
+    "sessions": 12,
+    "turns": 410,
+    "totalUsage": {
+      "newInputTokens": 1900000,
+      "cachedInputTokens": 22000000,
+      "cacheWriteTokens": 0,
+      "outputTokens": 88000,
+      "reasoningTokens": 12000
+    },
+    "estimatedCost": { "codexCredits": 165, "claudeUsdCents": 0, "unknown": 0 },
+    "rateLimitMax": { "primaryPercent": 40, "secondaryPercent": 52 }
+  },
+  {
+    "weekStart": "2026-05-18",
+    "projectCwd": "~/src/project-alpha",
+    "tool": "claude",
+    "model": "claude-opus-4-7",
+    "sessions": 8,
+    "turns": 2100,
+    "totalUsage": {
+      "newInputTokens": 120000,
+      "cachedInputTokens": 540000000,
+      "cacheWriteTokens": 6200000,
+      "outputTokens": 1750000,
+      "reasoningTokens": 0
+    },
+    "estimatedCost": { "codexCredits": 0, "claudeUsdCents": 158000, "unknown": 0 }
+  },
+  {
+    "weekStart": "2026-05-18",
+    "projectCwd": "~/src/project-alpha",
+    "tool": "codex",
+    "model": "gpt-5.5",
+    "sessions": 7,
+    "turns": 1240,
+    "totalUsage": {
+      "newInputTokens": 4600000,
+      "cachedInputTokens": 151000000,
+      "cacheWriteTokens": 0,
+      "outputTokens": 360000,
+      "reasoningTokens": 58000
+    },
+    "estimatedCost": { "codexCredits": 2790, "claudeUsdCents": 0, "unknown": 0 },
+    "rateLimitMax": { "primaryPercent": 100, "secondaryPercent": 99 }
+  },
+  {
+    "weekStart": "2026-05-18",
+    "projectCwd": "~/src/project-gamma",
+    "tool": "codex",
+    "model": "gpt-5.3-codex",
+    "sessions": 5,
+    "turns": 530,
+    "totalUsage": {
+      "newInputTokens": 2400000,
+      "cachedInputTokens": 64000000,
+      "cacheWriteTokens": 0,
+      "outputTokens": 142000,
+      "reasoningTokens": 31000
+    },
+    "estimatedCost": { "codexCredits": 980, "claudeUsdCents": 0, "unknown": 0 },
+    "rateLimitMax": { "primaryPercent": 63, "secondaryPercent": 80 }
+  },
+  {
+    "weekStart": "2026-05-18",
+    "projectCwd": "~/src/project-beta",
+    "tool": "claude",
+    "model": "claude-haiku-4-5",
+    "sessions": 3,
+    "turns": 190,
+    "totalUsage": {
+      "newInputTokens": 22000,
+      "cachedInputTokens": 9800000,
+      "cacheWriteTokens": 410000,
+      "outputTokens": 86000,
+      "reasoningTokens": 0
+    },
+    "estimatedCost": { "codexCredits": 0, "claudeUsdCents": 1900, "unknown": 0 }
+  }
+]
