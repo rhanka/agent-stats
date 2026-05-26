@@ -46,9 +46,15 @@
     background: var(--st-semantic-surface-default);
     color: var(--st-semantic-text-primary);
   }
+  /* The DS Header centers its navigation; align it left next to the title,
+     matching the other Sentropic apps. */
+  :global(.st-header__navigation) {
+    justify-content: flex-start;
+    gap: 16px;
+    padding-left: 8px;
+  }
   :global([data-st-theme] nav a) {
     color: var(--st-semantic-text-link, var(--st-semantic-text-primary));
-    margin-right: 16px;
     text-decoration: none;
     font-weight: 500;
   }
