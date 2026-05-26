@@ -67,7 +67,55 @@ function relabel(rows) {
   return rows;
 }
 
+/** Merge stat rows that collapse to the same (week, repo, tool, model) after
+ *  relabelling (e.g. a repo and its worktree). */
+function mergeStats(rows) {
+  const m = new Map();
+  for (const r of rows) {
+    const k = [r.weekStart, r.projectCwd, r.tool, r.model].join('|');
+    const a = m.get(k);
+    if (!a) {
+      m.set(k, structuredClone(r));
+      continue;
+    }
+    a.sessions += r.sessions;
+    a.turns += r.turns;
+    for (const f of Object.keys(a.totalUsage)) a.totalUsage[f] += r.totalUsage[f] ?? 0;
+    a.estimatedCost.codexCredits += r.estimatedCost.codexCredits;
+    a.estimatedCost.claudeUsdCents += r.estimatedCost.claudeUsdCents;
+    a.estimatedCost.unknown += r.estimatedCost.unknown;
+    if (r.rateLimitMax) {
+      a.rateLimitMax ??= { primaryPercent: 0, secondaryPercent: 0 };
+      a.rateLimitMax.primaryPercent = Math.max(a.rateLimitMax.primaryPercent, r.rateLimitMax.primaryPercent);
+      a.rateLimitMax.secondaryPercent = Math.max(a.rateLimitMax.secondaryPercent, r.rateLimitMax.secondaryPercent);
+    }
+    if (!a.repoUrl && r.repoUrl) a.repoUrl = r.repoUrl;
+  }
+  return [...m.values()];
+}
+
 const tmp = mkdtempSync(path.join(tmpdir(), 'agent-stats-pub-'));
+/** Build a stable label → "private-N" map for every project without a public
+ *  repo, ranked by total tokens, so we never publish a private/local name. */
+function buildPrivateMap(stats) {
+  const tot = new Map();
+  for (const r of stats) {
+    if (r.repoUrl) continue;
+    const u = r.totalUsage;
+    const t = u.newInputTokens + u.cachedInputTokens + u.cacheWriteTokens + u.outputTokens;
+    tot.set(r.projectCwd, (tot.get(r.projectCwd) ?? 0) + t);
+  }
+  const ranked = [...tot.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  return new Map(ranked.map((k, i) => [k, `private-${i + 1}`]));
+}
+
+function anonymize(rows, privMap) {
+  for (const r of rows) {
+    if (!r.repoUrl && privMap.has(r.projectCwd)) r.projectCwd = privMap.get(r.projectCwd);
+  }
+  return rows;
+}
+
 function run(cmd) {
   // Write via the CLI's --out (clean writeFile) rather than capturing stdout,
   // which truncated on large outputs.
@@ -79,8 +127,13 @@ function run(cmd) {
 }
 
 console.error(`Building published data since ${since} (last ${days} days)…`);
-const stats = relabel(run('stats'));
+const stats = mergeStats(relabel(run('stats')));
 const anomalies = relabel(run('anomalies'));
+// Never publish a private/local project name: collapse non-public projects to
+// stable "private-N" buckets (shared across both datasets).
+const privMap = buildPrivateMap(stats);
+anonymize(stats, privMap);
+anonymize(anomalies, privMap);
 
 writeFileSync(path.join(staticDir, 'published-stats.json'), JSON.stringify(stats));
 writeFileSync(path.join(staticDir, 'published-anomalies.json'), JSON.stringify(anomalies));
