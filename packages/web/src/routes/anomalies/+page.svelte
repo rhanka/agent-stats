@@ -58,8 +58,8 @@
     s === 'high' ? 'error' : s === 'medium' ? 'warning' : 'info';
 
   let anomalyRows = $derived.by<DataTableRow[]>(() =>
-    items.map((a) => ({
-      id: a.sessionId + a.type,
+    items.map((a, i) => ({
+      id: `${a.sessionId}|${a.type}|${i}`,
       severity: a.severity,
       type: a.type,
       tool: a.tool,
