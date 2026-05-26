@@ -5,8 +5,10 @@
     Badge,
     DataTable,
     EmptyState,
+    Alert,
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
+  import { base } from '$app/paths';
 
   type Anomaly = {
     sessionId: string;
@@ -20,18 +22,28 @@
   let items: Anomaly[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
+  let demo = $state(false);
   let sinceDays = $state(7);
 
   async function load(): Promise<void> {
     loading = true;
     error = null;
+    demo = false;
     try {
       const since = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
       const res = await fetch(`/api/anomalies?since=${encodeURIComponent(since)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       items = (await res.json()) as Anomaly[];
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      // No live API (static public site): fall back to bundled demo data.
+      try {
+        const demoRes = await fetch(`${base}/demo-anomalies.json`);
+        if (!demoRes.ok) throw new Error(`demo HTTP ${demoRes.status}`);
+        items = (await demoRes.json()) as Anomaly[];
+        demo = true;
+      } catch {
+        error = e instanceof Error ? e.message : String(e);
+      }
     } finally {
       loading = false;
     }
@@ -103,6 +115,15 @@
     {/snippet}
   </EmptyState>
 {:else}
+  {#if demo}
+    <div class="banner">
+      <Alert
+        tone="info"
+        title="Demo data"
+        message="This is an anonymized sample dataset. Run `npx @sentropic/agent-stats web` locally to analyze your own sessions."
+      />
+    </div>
+  {/if}
   <DataTable
     {columns}
     rows={anomalyRows}
@@ -121,6 +142,9 @@
     align-items: flex-end;
     gap: 12px;
     margin: 16px 0 24px;
+  }
+  .banner {
+    margin: 0 0 20px;
   }
   code {
     background: var(--st-semantic-surface-subtle, var(--st-semantic-surface-raised));

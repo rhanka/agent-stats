@@ -6,8 +6,10 @@
     Badge,
     DataTable,
     EmptyState,
+    Alert,
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
+  import { base } from '$app/paths';
 
   type WeeklyAggregation = {
     weekStart: string;
@@ -30,6 +32,7 @@
   let rows: WeeklyAggregation[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
+  let demo = $state(false);
 
   // Default: last 7 days.
   let sinceDays = $state(7);
@@ -37,13 +40,23 @@
   async function load(): Promise<void> {
     loading = true;
     error = null;
+    demo = false;
     try {
       const since = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
       const res = await fetch(`/api/stats?since=${encodeURIComponent(since)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       rows = (await res.json()) as WeeklyAggregation[];
     } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+      // No live API (e.g. the static public site): fall back to a bundled,
+      // anonymized demo dataset so the dashboard still demonstrates the UI.
+      try {
+        const demoRes = await fetch(`${base}/demo-stats.json`);
+        if (!demoRes.ok) throw new Error(`demo HTTP ${demoRes.status}`);
+        rows = (await demoRes.json()) as WeeklyAggregation[];
+        demo = true;
+      } catch {
+        error = e instanceof Error ? e.message : String(e);
+      }
     } finally {
       loading = false;
     }
@@ -211,6 +224,15 @@
     {/snippet}
   </EmptyState>
 {:else}
+  {#if demo}
+    <div class="banner">
+      <Alert
+        tone="info"
+        title="Demo data"
+        message="This is an anonymized sample dataset. Run `npx @sentropic/agent-stats web` locally to analyze your own Claude Code + Codex sessions."
+      />
+    </div>
+  {/if}
   <section class="cards">
     <Card>
       <div class="label">Sessions</div>
@@ -270,6 +292,9 @@
     align-items: flex-end;
     gap: 12px;
     margin: 16px 0 24px;
+  }
+  .banner {
+    margin: 0 0 20px;
   }
   .cards {
     display: grid;

@@ -1,0 +1,34 @@
+[
+  {
+    "sessionId": "demo-aaaa1111",
+    "tool": "codex",
+    "projectCwd": "~/src/project-alpha",
+    "type": "runaway_compactions",
+    "severity": "high",
+    "evidence": { "compactions": 7, "turns": 240 }
+  },
+  {
+    "sessionId": "demo-bbbb2222",
+    "tool": "claude",
+    "projectCwd": "~/src/project-alpha",
+    "type": "tool_loop",
+    "severity": "medium",
+    "evidence": { "tool": "Bash", "repeats": 14 }
+  },
+  {
+    "sessionId": "demo-cccc3333",
+    "tool": "codex",
+    "projectCwd": "~/src/project-gamma",
+    "type": "high_error_rate",
+    "severity": "medium",
+    "evidence": { "errorRate": 0.38, "toolCalls": 92 }
+  },
+  {
+    "sessionId": "demo-dddd4444",
+    "tool": "claude",
+    "projectCwd": "~/src/project-beta",
+    "type": "zombie_session",
+    "severity": "low",
+    "evidence": { "gapMinutes": 184 }
+  }
+]
