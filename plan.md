@@ -237,21 +237,21 @@ Vérifications faites sur **données réelles**, pas sur des specs.
       mesuré au pixel (titre à 16px, contenu à 210px) → gouttière partagée
       32px header+contenu, contenu pleine largeur. Vérifié live.
 
-### WP12 — Usage-over-time charts + 180/360j (status: 0/5, 0%)
+### WP12 — Usage-over-time charts + 180/360j (status: 5/5, 100%)
 
 Spec : `docs/superpowers/specs/2026-05-26-usage-charts-design.md` (approuvé).
 Charts via DS `@0.9.0` (LineChart/BarChart/Sparkline, mono-série). Web only.
 
-- [ ] Bump `packages/web` design-system `^0.7 → ^0.9` (fait) + sélecteur fenêtre
-      `180`/`360` jours.
-- [ ] Helper pur `weeklySeries(rows, metric, tool)` (bucket par `weekStart`,
-      sum/max selon métrique, filtre outil) + **test unitaire**.
-- [ ] Bloc "Usage over time" : `LineChart` smooth + toggle métrique
+- [x] Bump `packages/web` design-system `^0.7 → ^0.9` + sélecteur fenêtre
+      `180`/`360` jours (défaut passé à 90j pour que les charts soient peuplés).
+- [x] Helper pur `weeklySeries(rows, metric, tool)` (bucket par `weekStart`,
+      sum/max selon métrique, filtre outil) + **5 tests unitaires**.
+- [x] Bloc "Usage over time" : `LineChart` smooth + toggle métrique
       (Tokens/Credits/Quota% 7d/Sessions) + toggle outil All/Claude/Codex.
-- [ ] `Sparkline` dans les 4 cartes (Sessions/Tokens/Cost/Quota peak) +
-      Top projects en `BarChart` horizontal (table "All aggregations" gardée).
-- [ ] Régénérer le snapshot publié sur `--days 360` ; vérif live (screenshot)
-      + `typecheck`/`build`.
+- [x] `Sparkline` dans les 4 cartes (Sessions/Tokens/Cost/Quota peak) +
+      Top projects en `BarChart` horizontal (table détaillée gardée).
+- [x] Snapshot régénéré sur 360j (défaut générateur = 360). Vérifié live :
+      LineChart (pic début avril) + BarChart + table, 84 tests, build OK.
 
 ### WP9 — CI + release (status: 4/4, 100%)
 
@@ -277,8 +277,8 @@ Charts via DS `@0.9.0` (LineChart/BarChart/Sparkline, mono-série). Web only.
 | 9         | CI + release         |      4 |      4 |    100% | completed   |
 | 10        | Pages + DS Sentropic |      5 |      5 |    100% | completed   |
 | 11        | Corrections post-revue |    4 |      4 |    100% | completed   |
-| 12        | Usage charts + 180/360j |    5 |      0 |      0% | in_progress |
-| **Total** |                      | **75** | **69** | **92%** |             |
+| 12        | Usage charts + 180/360j |    5 |      5 |    100% | completed   |
+| **Total** |                      | **75** | **74** | **99%** |             |
 
 > ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
 > utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés

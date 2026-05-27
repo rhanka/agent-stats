@@ -40,8 +40,9 @@
   let published = $state(false);
   let publishedAt: string | null = $state(null);
 
-  // Default: last 7 days.
-  let sinceDays = $state(7);
+  // Default to a quarter so the time-series chart and sparklines have several
+  // weeks to plot on first load (7 days = a single bucket = nothing to trend).
+  let sinceDays = $state(90);
 
   // "Usage over time" chart controls.
   let chartMetric = $state<SeriesMetric>('tokens');
