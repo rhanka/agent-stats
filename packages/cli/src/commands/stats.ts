@@ -45,7 +45,8 @@ function parseDate(value: string | undefined, label: string): Date | undefined {
  */
 function formatCost(r: WeeklyAggregation): string {
   if (r.estimatedCost.codexCredits > 0) return `${r.estimatedCost.codexCredits.toFixed(1)} cr`;
-  if (r.estimatedCost.claudeUsdCents > 0) return `~$${(r.estimatedCost.claudeUsdCents / 100).toFixed(2)}`;
+  if (r.estimatedCost.claudeUsdCents > 0)
+    return `~$${(r.estimatedCost.claudeUsdCents / 100).toFixed(2)}`;
   return '-';
 }
 

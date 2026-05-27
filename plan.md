@@ -220,7 +220,7 @@ Vérifications faites sur **données réelles**, pas sur des specs.
 - [x] (révisé) L'utilisateur ne veut PAS de données fictives : il publie ses
       **vraies** données, calculées ici. `scripts/build-published-data.mjs`
       agrège 180j via le CLI et écrit `static/published-{stats,anomalies,
-      meta}.json`. Chaque projet est relabellisé vers son **remote git
+meta}.json`. Chaque projet est relabellisé vers son **remote git
       public** (`owner/repo` + URL cliquable) ; les projets sans upstream
       public sont **anonymisés `private-N`** (aucun chemin/username/nom privé
       publié — vérifié). Lignes fusionnées par (semaine×repo×outil×modèle).
@@ -284,22 +284,22 @@ capté (originator `codex_vscode`) → juste l'étiqueter par surface.
 
 ## Status (mis à jour automatiquement)
 
-| WP        | Titre                |  Total |   Done |       % | État        |
-| --------- | -------------------- | -----: | -----: | ------: | ----------- |
-| 1         | Repo bootstrap       |     14 |     14 |    100% | completed   |
-| 2         | Parsers MVP          |     10 |     10 |    100% | completed   |
-| 3         | Aggregations MVP     |      8 |      8 |    100% | completed   |
-| 4         | CLI MVP              |      6 |      6 |    100% | completed   |
-| 6         | Cleanser secrets     |      5 |      4 |     80% | in_progress |
-| 5         | Anomaly heuristiques |      4 |      4 |    100% | completed   |
-| 8         | Web dashboard        |      5 |      5 |    100% | completed   |
-| 7         | Phase 2 LLM          |      5 |      5 |    100% | completed   |
-| 9         | CI + release         |      4 |      4 |    100% | completed   |
-| 10        | Pages + DS Sentropic |      5 |      5 |    100% | completed   |
-| 11        | Corrections post-revue |    4 |      4 |    100% | completed   |
-| 12        | Usage charts + 180/360j |    5 |      5 |    100% | completed   |
-| 13        | Source Cursor + surface Codex |  6 |   6 |    100% | completed   |
-| **Total** |                      | **81** | **80** | **99%** |             |
+| WP        | Titre                         |  Total |   Done |       % | État        |
+| --------- | ----------------------------- | -----: | -----: | ------: | ----------- |
+| 1         | Repo bootstrap                |     14 |     14 |    100% | completed   |
+| 2         | Parsers MVP                   |     10 |     10 |    100% | completed   |
+| 3         | Aggregations MVP              |      8 |      8 |    100% | completed   |
+| 4         | CLI MVP                       |      6 |      6 |    100% | completed   |
+| 6         | Cleanser secrets              |      5 |      4 |     80% | in_progress |
+| 5         | Anomaly heuristiques          |      4 |      4 |    100% | completed   |
+| 8         | Web dashboard                 |      5 |      5 |    100% | completed   |
+| 7         | Phase 2 LLM                   |      5 |      5 |    100% | completed   |
+| 9         | CI + release                  |      4 |      4 |    100% | completed   |
+| 10        | Pages + DS Sentropic          |      5 |      5 |    100% | completed   |
+| 11        | Corrections post-revue        |      4 |      4 |    100% | completed   |
+| 12        | Usage charts + 180/360j       |      5 |      5 |    100% | completed   |
+| 13        | Source Cursor + surface Codex |      6 |      6 |    100% | completed   |
+| **Total** |                               | **81** | **80** | **99%** |             |
 
 > ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
 > utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés
