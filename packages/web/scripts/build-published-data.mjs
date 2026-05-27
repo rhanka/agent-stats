@@ -134,7 +134,7 @@ function run(cmd, extraArgs = [], sinceDate = since) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 
-const DAILY_DAYS = 60;
+const DAILY_DAYS = 65; // cover the 60-day daily window with margin
 const dailySince = new Date(Date.now() - DAILY_DAYS * 86_400_000).toISOString().slice(0, 10);
 
 console.error(`Building published data since ${since} (last ${days} days)…`);

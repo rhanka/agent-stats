@@ -7,13 +7,21 @@
     DataTable,
     EmptyState,
     Alert,
-    LineChart,
     BarChart,
     Sparkline,
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
   import { base } from '$app/paths';
   import { periodSeries, type SeriesMetric } from '@sentropic/agent-stats-core';
+  import MultiLineChart from '$lib/MultiLineChart.svelte';
+
+  // Daily granularity threshold (windows ≤ this many days are bucketed per day).
+  const DAILY_MAX_DAYS = 60;
+  const PROVIDER_COLOR: Record<string, string> = {
+    claude: 'var(--st-semantic-data-category1)',
+    codex: 'var(--st-semantic-data-category2)',
+    cursor: 'var(--st-semantic-data-category3)',
+  };
 
   type WeeklyAggregation = {
     weekStart: string;
@@ -194,23 +202,27 @@
     return s;
   });
 
-  // --- Time-series data for the charts ---
-  // For <30d windows use daily buckets. In API mode `rows` already comes daily
-  // (the CLI auto-resolves); in published mode we read the daily snapshot.
+  // --- Time-series data for the chart ---
+  // Windows ≤ DAILY_MAX_DAYS use daily buckets. In API mode `rows` already comes
+  // daily (the CLI auto-resolves); in published mode we read the daily snapshot.
+  let isDaily = $derived(sinceDays <= DAILY_MAX_DAYS);
   let chartRows = $derived.by<WeeklyAggregation[]>(() => {
-    if (sinceDays >= 30) return displayRows;
+    if (!isDaily) return displayRows;
     if (!published) return displayRows; // API already returned daily rows
     if (dailyRows.length === 0) return displayRows;
     const cutoff = new Date(Date.now() - sinceDays * 86_400_000).toISOString().slice(0, 10);
     return dailyRows.filter((r) => r.weekStart >= cutoff);
   });
 
-  // One series per checked provider → small multiples.
+  // One overlaid series per checked provider (only those with data).
   let providerSeries = $derived.by(() =>
-    ALL_PROVIDERS.filter((p) => providers[p]).map((p) => ({
-      provider: p,
-      points: periodSeries(chartRows, chartMetric, p),
-    })),
+    ALL_PROVIDERS.filter((p) => providers[p])
+      .map((p) => ({
+        label: p,
+        color: PROVIDER_COLOR[p] ?? 'var(--st-semantic-data-category1)',
+        points: periodSeries(chartRows, chartMetric, p),
+      }))
+      .filter((s) => s.points.length > 0),
   );
 
   // Sparkline values (number[]) for each summary card.
@@ -317,6 +329,7 @@
     <option value={7}>7 days</option>
     <option value={14}>14 days</option>
     <option value={30}>30 days</option>
+    <option value={60}>60 days</option>
     <option value={90}>90 days</option>
     <option value={180}>180 days</option>
     <option value={360}>360 days</option>
@@ -404,23 +417,14 @@
       </div>
     </div>
   </div>
-  <p class="hint">Per {sinceDays < 30 ? 'day' : 'week'} · cached read is isolated (excluded from In+Out).</p>
+  <p class="hint">
+    {METRIC_LABELS[chartMetric]} per {isDaily ? 'day' : 'week'} · cached read is isolated (excluded
+    from In+Out).
+  </p>
   <div class="chart" bind:clientWidth={chartWidth}>
-    {#each providerSeries as s (s.provider)}
-      {#if s.points.length > 1}
-        <div class="multiple">
-          <div class="multiple-title">{s.provider}</div>
-          <LineChart
-            data={s.points}
-            width={chartWidth}
-            height={180}
-            smooth
-            tone="category1"
-            label={`${METRIC_LABELS[chartMetric]} per ${sinceDays < 30 ? 'day' : 'week'} (${s.provider})`}
-          />
-        </div>
-      {/if}
-    {/each}
+    {#if providerSeries.length > 0}
+      <MultiLineChart series={providerSeries} width={chartWidth} height={260} valueFmt={fmt} />
+    {/if}
   </div>
 
   <h2>Top projects</h2>
@@ -521,16 +525,6 @@
   .chart {
     width: 100%;
     margin: 8px 0 24px;
-  }
-  .multiple {
-    margin-bottom: 12px;
-  }
-  .multiple-title {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: capitalize;
-    color: var(--st-semantic-text-secondary, var(--st-semantic-text-primary));
-    margin-bottom: 2px;
   }
   code {
     background: var(--st-semantic-surface-subtle, var(--st-semantic-surface-raised));
