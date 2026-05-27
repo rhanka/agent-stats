@@ -12,7 +12,7 @@
 
   type Anomaly = {
     sessionId: string;
-    tool: 'claude' | 'codex';
+    tool: 'claude' | 'codex' | 'cursor';
     projectCwd: string;
     type: string;
     severity: 'low' | 'medium' | 'high';
@@ -85,7 +85,9 @@
 {/snippet}
 
 {#snippet toolCell(row: DataTableRow)}
-  <Badge tone={row.tool === 'claude' ? 'info' : 'success'}>{row.tool}</Badge>
+  <Badge tone={row.tool === 'claude' ? 'info' : row.tool === 'codex' ? 'success' : 'warning'}>
+    {row.tool}
+  </Badge>
 {/snippet}
 
 {#snippet monoCell(row: DataTableRow, col: DataTableColumn)}

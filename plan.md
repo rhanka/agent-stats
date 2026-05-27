@@ -253,24 +253,24 @@ Charts via DS `@0.9.0` (LineChart/BarChart/Sparkline, mono-série). Web only.
 - [x] Snapshot régénéré sur 360j (défaut générateur = 360). Vérifié live :
       LineChart (pic début avril) + BarChart + table, 84 tests, build OK.
 
-### WP13 — Source Cursor + surface Codex (status: 0/6, 0%)
+### WP13 — Source Cursor + surface Codex (status: 6/6, 100%)
 
 Spec : `docs/superpowers/specs/2026-05-27-cursor-source-design.md` (approuvé).
 Objectif : « tous les usages locaux ». Cursor = 319 sessions / 146k messages,
 avr. 2025 → avr. 2026, avec tokens (mais sans coût/quota). VSCode-Codex déjà
 capté (originator `codex_vscode`) → juste l'étiqueter par surface.
 
-- [ ] Schéma : `Tool += 'cursor'` ; `session_start.surface?`.
-- [ ] Parser `cursor.ts` : `indexCursorSessions` (38 `state.vscdb`, dédup par
+- [x] Schéma : `Tool += 'cursor'` ; `session_start.surface?`.
+- [x] Parser `cursor.ts` : `indexCursorSessions` (38 `state.vscdb`, dédup par
       `composerId`, mapping workspace→repo) + `parseCursorComposer` (tokens
       `inputTokens`/`outputTokens` par bubble). Parsing défensif (schéma non
       documenté). **Tests** (fixture vscdb en mémoire).
-- [ ] `collect()` : source `cursor` + option `cursorStateDir`.
-- [ ] Codex surface : `originator`→`surface` ; agrégation `sessionsBySurface`
+- [x] `collect()` : source `cursor` + option `cursorStateDir`.
+- [x] Codex surface : `originator`→`surface` ; agrégation `sessionsBySurface`
       (Record, pas de multiplication de lignes). **Test** fixture `codex_vscode`.
-- [ ] Web : `tool='cursor'` (badge, filtres, toggle outil du graphe) ; petit
+- [x] Web : `tool='cursor'` (badge, filtres, toggle outil du graphe) ; petit
       « Codex by surface ». Pas de coût/quota Cursor.
-- [ ] Régénérer le snapshot publié (remonte à avr. 2025) ; vérif CLI/build
+- [x] Régénérer le snapshot publié (remonte à avr. 2025) ; vérif CLI/build
       (+ screenshot live quand MCP reconnecté).
 
 ### WP9 — CI + release (status: 4/4, 100%)
@@ -298,8 +298,8 @@ capté (originator `codex_vscode`) → juste l'étiqueter par surface.
 | 10        | Pages + DS Sentropic |      5 |      5 |    100% | completed   |
 | 11        | Corrections post-revue |    4 |      4 |    100% | completed   |
 | 12        | Usage charts + 180/360j |    5 |      5 |    100% | completed   |
-| 13        | Source Cursor + surface Codex |  6 |   0 |      0% | in_progress |
-| **Total** |                      | **81** | **74** | **91%** |             |
+| 13        | Source Cursor + surface Codex |  6 |   6 |    100% | completed   |
+| **Total** |                      | **81** | **80** | **99%** |             |
 
 > ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
 > utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés
