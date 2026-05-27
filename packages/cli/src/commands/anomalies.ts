@@ -14,11 +14,12 @@ import {
 export interface AnomaliesCommandOptions {
   since?: string;
   until?: string;
-  tool?: 'claude' | 'codex';
+  tool?: 'claude' | 'codex' | 'cursor';
   project?: string;
   format?: 'json' | 'table';
   claudeProjectsDir?: string;
   codexDbPath?: string;
+  cursorStateDir?: string;
 }
 
 export interface AnomaliesResult {
@@ -65,10 +66,12 @@ export async function runAnomalies(opts: AnomaliesCommandOptions = {}): Promise<
   if (opts.project !== undefined) collectOpts.projectCwd = opts.project;
   if (opts.claudeProjectsDir !== undefined) collectOpts.claudeProjectsDir = opts.claudeProjectsDir;
   if (opts.codexDbPath !== undefined) collectOpts.codexDbPath = opts.codexDbPath;
+  if (opts.cursorStateDir !== undefined) collectOpts.cursorStateDir = opts.cursorStateDir;
   if (opts.tool) {
     collectOpts.sources = {
       claude: opts.tool === 'claude',
       codex: opts.tool === 'codex',
+      cursor: opts.tool === 'cursor',
     };
   }
   const anomalies = await detectAnomalies(collect(collectOpts));

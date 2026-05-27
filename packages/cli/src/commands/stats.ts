@@ -13,12 +13,13 @@ import {
 export interface StatsCommandOptions {
   since?: string; // ISO date
   until?: string; // ISO date
-  tool?: 'claude' | 'codex';
+  tool?: 'claude' | 'codex' | 'cursor';
   project?: string;
   format?: 'json' | 'table';
   /** Override default scan dirs (used by tests). */
   claudeProjectsDir?: string;
   codexDbPath?: string;
+  cursorStateDir?: string;
 }
 
 export interface StatsResult {
@@ -127,10 +128,12 @@ export async function runStats(opts: StatsCommandOptions = {}): Promise<StatsRes
   if (opts.project !== undefined) collectOpts.projectCwd = opts.project;
   if (opts.claudeProjectsDir !== undefined) collectOpts.claudeProjectsDir = opts.claudeProjectsDir;
   if (opts.codexDbPath !== undefined) collectOpts.codexDbPath = opts.codexDbPath;
+  if (opts.cursorStateDir !== undefined) collectOpts.cursorStateDir = opts.cursorStateDir;
   if (opts.tool) {
     collectOpts.sources = {
       claude: opts.tool === 'claude',
       codex: opts.tool === 'codex',
+      cursor: opts.tool === 'cursor',
     };
   }
   const rows = await aggregateWeekly(collect(collectOpts));

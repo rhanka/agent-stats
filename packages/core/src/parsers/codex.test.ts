@@ -32,6 +32,7 @@ describe('parseCodexRollout', () => {
     expect(events[0].projectCwd).toBe('/home/u/src/demo');
     expect(events[0].cliVersion).toBe('0.130.0');
     expect(events[0].isSubagent).toBe(false);
+    expect(events[0].surface).toBe('cli'); // originator codex-tui → cli
   });
 
   it('emits user_prompt for user_message event', async () => {
