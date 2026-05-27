@@ -25,6 +25,13 @@ export {
 } from './parsers/cursor.js';
 export { collect, decodeClaudeProjectDir, type CollectOptions } from './collect.js';
 export {
+  weeklySeries,
+  type SeriesMetric,
+  type ToolFilter,
+  type SeriesRow,
+  type SeriesPoint,
+} from './series.js';
+export {
   aggregateSessions,
   aggregateWeekly,
   bucketWeekly,

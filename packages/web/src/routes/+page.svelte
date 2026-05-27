@@ -13,7 +13,11 @@
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
   import { base } from '$app/paths';
-  import { weeklySeries, type SeriesMetric, type ToolFilter } from '$lib/series';
+  import {
+    weeklySeries,
+    type SeriesMetric,
+    type ToolFilter,
+  } from '@sentropic/agent-stats-core';
 
   type WeeklyAggregation = {
     weekStart: string;
