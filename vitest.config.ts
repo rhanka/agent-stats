@@ -13,7 +13,9 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       include: ['packages/*/src/**/*.ts'],
-      exclude: ['**/*.test.ts', '**/dist/**'],
+      // `.d.ts` (e.g. SvelteKit's app.d.ts) and build caches can't be parsed by
+      // the coverage instrumenter on some platforms — exclude them.
+      exclude: ['**/*.test.ts', '**/*.d.ts', '**/dist/**', '**/.svelte-kit/**'],
     },
   },
 });
