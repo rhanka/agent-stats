@@ -63,7 +63,5 @@ export function weeklySeries(
     if (prev === undefined) byWeek.set(r.weekStart, v);
     else byWeek.set(r.weekStart, isMax ? Math.max(prev, v) : prev + v);
   }
-  return [...byWeek.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([x, y]) => ({ x, y }));
+  return [...byWeek.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([x, y]) => ({ x, y }));
 }

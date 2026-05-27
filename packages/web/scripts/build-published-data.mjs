@@ -86,8 +86,14 @@ function mergeStats(rows) {
     a.estimatedCost.unknown += r.estimatedCost.unknown;
     if (r.rateLimitMax) {
       a.rateLimitMax ??= { primaryPercent: 0, secondaryPercent: 0 };
-      a.rateLimitMax.primaryPercent = Math.max(a.rateLimitMax.primaryPercent, r.rateLimitMax.primaryPercent);
-      a.rateLimitMax.secondaryPercent = Math.max(a.rateLimitMax.secondaryPercent, r.rateLimitMax.secondaryPercent);
+      a.rateLimitMax.primaryPercent = Math.max(
+        a.rateLimitMax.primaryPercent,
+        r.rateLimitMax.primaryPercent,
+      );
+      a.rateLimitMax.secondaryPercent = Math.max(
+        a.rateLimitMax.secondaryPercent,
+        r.rateLimitMax.secondaryPercent,
+      );
     }
     if (!a.repoUrl && r.repoUrl) a.repoUrl = r.repoUrl;
   }
