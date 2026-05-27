@@ -12,10 +12,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      include: ['packages/*/src/**/*.ts'],
-      // `.d.ts` (e.g. SvelteKit's app.d.ts) and build caches can't be parsed by
-      // the coverage instrumenter on some platforms — exclude them.
-      exclude: ['**/*.test.ts', '**/*.d.ts', '**/dist/**', '**/.svelte-kit/**'],
+      // Coverage targets the core + cli libraries. The web package is verified
+      // by svelte-check + build; its Svelte-rune .ts (e.g. theme.svelte.ts)
+      // can't be parsed by the coverage instrumenter on the CI runner.
+      include: ['packages/core/src/**/*.ts', 'packages/cli/src/**/*.ts'],
+      exclude: ['**/*.test.ts', '**/*.d.ts', '**/dist/**'],
     },
   },
 });
