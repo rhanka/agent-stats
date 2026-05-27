@@ -27,7 +27,8 @@ export interface StatsCommandOptions {
 
 const DAY_MS = 86_400_000;
 
-/** Resolve auto granularity: daily when the window spans < 30 days. */
+/** Daily when the window spans ≤ 60 days, weekly otherwise. */
+const DAILY_MAX_DAYS = 60;
 function resolveGranularity(
   g: StatsCommandOptions['granularity'],
   since: Date | undefined,
@@ -36,7 +37,8 @@ function resolveGranularity(
   if (g === 'day' || g === 'week') return g;
   if (!since) return 'week';
   const end = until ?? new Date();
-  return end.getTime() - since.getTime() < 30 * DAY_MS ? 'day' : 'week';
+  const days = (end.getTime() - since.getTime()) / DAY_MS;
+  return days <= DAILY_MAX_DAYS + 1 ? 'day' : 'week';
 }
 
 export interface StatsResult {
