@@ -122,33 +122,49 @@ function anonymize(rows, privMap) {
   return rows;
 }
 
-function run(cmd) {
+function run(cmd, extraArgs = [], sinceDate = since) {
   // Write via the CLI's --out (clean writeFile) rather than capturing stdout,
   // which truncated on large outputs.
-  const file = path.join(tmp, `${cmd}.json`);
-  execFileSync('node', [cli, cmd, '--since', since, '--format', 'json', '--out', file], {
-    stdio: ['ignore', 'ignore', 'inherit'],
-  });
+  const file = path.join(tmp, `${cmd}-${extraArgs.join('') || 'w'}.json`);
+  execFileSync(
+    'node',
+    [cli, cmd, '--since', sinceDate, '--format', 'json', ...extraArgs, '--out', file],
+    { stdio: ['ignore', 'ignore', 'inherit'] },
+  );
   return JSON.parse(readFileSync(file, 'utf8'));
 }
+
+const DAILY_DAYS = 60;
+const dailySince = new Date(Date.now() - DAILY_DAYS * 86_400_000).toISOString().slice(0, 10);
 
 console.error(`Building published data since ${since} (last ${days} days)…`);
 const stats = mergeStats(relabel(run('stats')));
 const anomalies = relabel(run('anomalies'));
+// Daily granularity for the recent window (powers the <30d chart on the static site).
+const daily = mergeStats(relabel(run('stats', ['--granularity', 'day'], dailySince)));
+
 // Never publish a private/local project name: collapse non-public projects to
-// stable "private-N" buckets (shared across both datasets).
+// stable "private-N" buckets (shared across all datasets).
 const privMap = buildPrivateMap(stats);
 anonymize(stats, privMap);
 anonymize(anomalies, privMap);
+anonymize(daily, privMap);
 
 writeFileSync(path.join(staticDir, 'published-stats.json'), JSON.stringify(stats));
+writeFileSync(path.join(staticDir, 'published-daily.json'), JSON.stringify(daily));
 writeFileSync(path.join(staticDir, 'published-anomalies.json'), JSON.stringify(anomalies));
 writeFileSync(
   path.join(staticDir, 'published-meta.json'),
-  JSON.stringify({ generatedAt: new Date().toISOString(), sinceDate: since, days }),
+  JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    sinceDate: since,
+    days,
+    dailySinceDate: dailySince,
+    dailyDays: DAILY_DAYS,
+  }),
 );
 
 const repos = new Set(stats.map((r) => r.projectCwd));
 console.error(
-  `Wrote ${stats.length} stat rows, ${anomalies.length} anomalies, ${repos.size} projects.`,
+  `Wrote ${stats.length} weekly rows, ${daily.length} daily rows, ${anomalies.length} anomalies, ${repos.size} projects.`,
 );

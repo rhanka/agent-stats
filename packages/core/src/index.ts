@@ -25,6 +25,7 @@ export {
 } from './parsers/cursor.js';
 export { collect, decodeClaudeProjectDir, type CollectOptions } from './collect.js';
 export {
+  periodSeries,
   weeklySeries,
   type SeriesMetric,
   type ToolFilter,
@@ -34,12 +35,16 @@ export {
 export {
   aggregateSessions,
   aggregateWeekly,
+  aggregateByPeriod,
   bucketWeekly,
+  bucketBy,
   cacheEfficiency,
   weekStartIso,
+  dayStartIso,
   type AggregateOptions,
   type SessionAggregate,
   type WeeklyAggregation,
+  type Granularity,
 } from './aggregations.js';
 export {
   DEFAULT_RATE_CARD,
