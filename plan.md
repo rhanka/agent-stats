@@ -273,6 +273,25 @@ capté (originator `codex_vscode`) → juste l'étiqueter par surface.
 - [x] Régénérer le snapshot publié (remonte à avr. 2025) ; vérif CLI/build
       (+ screenshot live quand MCP reconnecté).
 
+### WP14 — Graphe « Usage over time » enrichi (status: 0/?, brainstorm)
+
+Intention (demande utilisateur, à raffiner en brainstorm + Q/R → spec) :
+
+- Métrique : pouvoir choisir **tokens in** / **tokens out** / **in+out**
+  (aujourd'hui seulement in+out).
+- **Cached tokens** : pouvoir les **splitter** (série/part dédiée) ou les
+  **retirer** — décision à prendre (proposition attendue).
+- **Splitter les courbes par fournisseur** (claude / codex / cursor…) —
+  plutôt qu'un toggle unique, un **sélecteur à cases à cocher** (multi-série).
+  Contrainte : `LineChart` du design system est **mono-série** → arbitrage
+  small-multiples vs overlay custom à trancher.
+- **Granularité** : pour les fenêtres **< 30 j**, proposer un découpage
+  **par jour** (aujourd'hui tout est hebdo). Contrainte : le snapshot publié
+  est agrégé **hebdo** → le daily nécessite un nouveau chemin de données
+  (daily seulement en mode API local, ou enrichir le snapshot).
+
+Spec à écrire après le brainstorm.
+
 ### WP9 — CI + release (status: 4/4, 100%)
 
 - [x] Coverage report dans CI (`@vitest/coverage-v8`, upload artifact)
