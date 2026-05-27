@@ -1,0 +1,9 @@
+# Generated data (machine-written JSON snapshots — not hand-formatted)
+packages/web/static/published-*.json
+packages/web/static/demo-*.json
+
+# Build output / caches
+**/dist/
+**/build/
+**/.svelte-kit/
+coverage/

@@ -136,7 +136,10 @@ export function indexCursorSessions(opts: IndexCursorOptions = {}): CursorIndexE
       const o = parseJson(row.value);
       if (!o || typeof o !== 'object') continue;
       const composer = o as Record<string, unknown>;
-      const id = typeof composer['composerId'] === 'string' ? composer['composerId'] : row.key.slice('composerData:'.length);
+      const id =
+        typeof composer['composerId'] === 'string'
+          ? composer['composerId']
+          : row.key.slice('composerData:'.length);
       const createdAt = typeof composer['createdAt'] === 'number' ? composer['createdAt'] : 0;
       if (createdAt <= 0) continue;
       const when = new Date(createdAt);

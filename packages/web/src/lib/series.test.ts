@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { weeklySeries, type SeriesRow } from './series';
 
-const row = (over: Partial<SeriesRow> & { weekStart: string; tool: 'claude' | 'codex' }): SeriesRow => ({
+const row = (
+  over: Partial<SeriesRow> & { weekStart: string; tool: 'claude' | 'codex' },
+): SeriesRow => ({
   sessions: 1,
   totalUsage: { newInputTokens: 0, cachedInputTokens: 0, cacheWriteTokens: 0, outputTokens: 0 },
   estimatedCost: { codexCredits: 0 },
@@ -13,7 +15,12 @@ const rows: SeriesRow[] = [
     weekStart: '2026-05-04',
     tool: 'codex',
     sessions: 2,
-    totalUsage: { newInputTokens: 100, cachedInputTokens: 900, cacheWriteTokens: 0, outputTokens: 50 },
+    totalUsage: {
+      newInputTokens: 100,
+      cachedInputTokens: 900,
+      cacheWriteTokens: 0,
+      outputTokens: 50,
+    },
     estimatedCost: { codexCredits: 30 },
     rateLimitMax: { secondaryPercent: 40 },
   }),
@@ -21,7 +28,12 @@ const rows: SeriesRow[] = [
     weekStart: '2026-05-04',
     tool: 'claude',
     sessions: 3,
-    totalUsage: { newInputTokens: 10, cachedInputTokens: 90, cacheWriteTokens: 5, outputTokens: 20 },
+    totalUsage: {
+      newInputTokens: 10,
+      cachedInputTokens: 90,
+      cacheWriteTokens: 5,
+      outputTokens: 20,
+    },
     estimatedCost: { codexCredits: 0 },
     rateLimitMax: { secondaryPercent: 80 },
   }),

@@ -14,7 +14,12 @@ import {
 
 let stateDir: string;
 
-function composer(id: string, createdAt: number, fileUri: string, bubbles: { id: string; type: number }[]) {
+function composer(
+  id: string,
+  createdAt: number,
+  fileUri: string,
+  bubbles: { id: string; type: number }[],
+) {
   return {
     composerId: id,
     createdAt,
@@ -57,8 +62,14 @@ beforeAll(() => {
       ]),
     ),
   );
-  put.run('bubbleId:bbb:a1', JSON.stringify({ type: 2, tokenCount: { inputTokens: 100, outputTokens: 10 } }));
-  put.run('bubbleId:bbb:a2', JSON.stringify({ type: 2, tokenCount: { inputTokens: 200, outputTokens: 20 } }));
+  put.run(
+    'bubbleId:bbb:a1',
+    JSON.stringify({ type: 2, tokenCount: { inputTokens: 100, outputTokens: 10 } }),
+  );
+  put.run(
+    'bubbleId:bbb:a2',
+    JSON.stringify({ type: 2, tokenCount: { inputTokens: 200, outputTokens: 20 } }),
+  );
 
   // A null/garbage composer value must be skipped, not crash.
   put.run('composerData:zzz', 'not json');
@@ -77,7 +88,10 @@ describe('indexCursorSessions', () => {
   });
 
   it('applies the project filter', () => {
-    const entries = indexCursorSessions({ cursorStateDir: stateDir, projectCwd: '/home/u/src/projB' });
+    const entries = indexCursorSessions({
+      cursorStateDir: stateDir,
+      projectCwd: '/home/u/src/projB',
+    });
     expect(entries.map((e) => e.sessionId)).toEqual(['bbb']);
   });
 
@@ -90,7 +104,9 @@ describe('parseCursorComposer', () => {
   function eventsFor(id: string): ReturnType<typeof parseCursorComposer> {
     const db = new Database(defaultCursorDbPath(stateDir), { readonly: true });
     try {
-      const entry = indexCursorSessions({ cursorStateDir: stateDir }).find((e) => e.sessionId === id)!;
+      const entry = indexCursorSessions({ cursorStateDir: stateDir }).find(
+        (e) => e.sessionId === id,
+      )!;
       return parseCursorComposer(db, entry as CursorIndexEntry);
     } finally {
       db.close();
