@@ -21,20 +21,22 @@ import path from 'node:path';
 import type { SessionEvent } from './schema.js';
 import { parseClaudeSession } from './parsers/claude.js';
 import { indexCodexSessions, parseCodexRollout, type IndexCodexOptions } from './parsers/codex.js';
+import { collectCursorEvents, type IndexCursorOptions } from './parsers/cursor.js';
 
 export interface CollectOptions {
-  sources?: { claude?: boolean; codex?: boolean };
+  sources?: { claude?: boolean; codex?: boolean; cursor?: boolean };
   since?: Date;
   until?: Date;
   /**
-   * Exact cwd OR cwd prefix when ending with `/`. Applied to BOTH Claude
-   * and Codex sources.
+   * Exact cwd OR cwd prefix when ending with `/`. Applied to all sources.
    */
   projectCwd?: string;
   /** Override path for ~/.claude/projects/ */
   claudeProjectsDir?: string;
   /** Override path for the Codex sqlite index. */
   codexDbPath?: string;
+  /** Override path for ~/.config/Cursor/User. */
+  cursorStateDir?: string;
 }
 
 const DEFAULT_HOME = (): string => process.env['HOME'] ?? '';
@@ -127,19 +129,34 @@ async function* collectCodex(opts: CollectOptions): AsyncGenerator<SessionEvent,
   }
 }
 
+async function* collectCursor(opts: CollectOptions): AsyncGenerator<SessionEvent, void, unknown> {
+  const cursorOpts: IndexCursorOptions = {};
+  if (opts.cursorStateDir !== undefined) cursorOpts.cursorStateDir = opts.cursorStateDir;
+  if (opts.since !== undefined) cursorOpts.since = opts.since;
+  if (opts.until !== undefined) cursorOpts.until = opts.until;
+  if (opts.projectCwd !== undefined) cursorOpts.projectCwd = opts.projectCwd;
+  for await (const ev of collectCursorEvents(cursorOpts)) {
+    if (!eventInWindow(ev, opts.since, opts.until)) continue;
+    yield ev;
+  }
+}
+
 /**
- * Yield events from one or both sources, optionally filtered by project /
+ * Yield events from the enabled sources, optionally filtered by project /
  * time window. The order across sources is NOT guaranteed; callers that
  * need a global timeline should sort by `ts` after collecting.
  */
 export async function* collect(
   opts: CollectOptions = {},
 ): AsyncGenerator<SessionEvent, void, unknown> {
-  const sources = { claude: true, codex: true, ...(opts.sources ?? {}) };
+  const sources = { claude: true, codex: true, cursor: true, ...(opts.sources ?? {}) };
   if (sources.claude) {
     yield* collectClaude(opts);
   }
   if (sources.codex) {
     yield* collectCodex(opts);
+  }
+  if (sources.cursor) {
+    yield* collectCursor(opts);
   }
 }

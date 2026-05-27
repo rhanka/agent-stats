@@ -178,6 +178,7 @@ interface CodexSessionMetaPayload {
   cli_version?: string;
   agent_nickname?: string;
   model_provider?: string;
+  originator?: string;
   source?: { subagent?: { thread_spawn?: { parent_thread_id?: string; depth?: number } } };
   thread_source?: string;
 }
@@ -213,6 +214,13 @@ function normalizeCodexUsage(raw: CodexUsageRaw | undefined): Usage {
 
 const sha256short = (text: string): string =>
   createHash('sha256').update(text).digest('hex').slice(0, 16);
+
+/** Map a Codex `originator` to the local surface that produced the session. */
+function codexSurface(originator: string | undefined): 'cli' | 'vscode' | 'exec' {
+  if (originator === 'codex_vscode') return 'vscode';
+  if (originator === 'codex_exec') return 'exec';
+  return 'cli'; // codex-tui, codex_cli_rs, unknown
+}
 
 function categorizeCodexTool(name: string): 'bash' | 'mcp' | 'native' | 'function' | 'unknown' {
   if (name.startsWith('mcp__') || name.startsWith('mcp_')) return 'mcp';
@@ -279,6 +287,7 @@ export async function* parseCodexRollout(
         kind: 'session_start',
         // NB: `model_provider` is just "openai" — the real model (gpt-5.x)
         // arrives later in `turn_context` events, so we don't set it here.
+        surface: codexSurface(p.originator),
         ...(parentId ? { forkedFromId: parentId } : {}),
         ...(typeof depth === 'number' ? { subagentDepth: depth } : {}),
         ...(p.agent_nickname ? { agentNickname: p.agent_nickname } : {}),

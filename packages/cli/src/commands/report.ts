@@ -16,11 +16,12 @@ import {
 export interface ReportCommandOptions {
   since?: string;
   until?: string;
-  tool?: 'claude' | 'codex';
+  tool?: 'claude' | 'codex' | 'cursor';
   project?: string;
   top?: number;
   claudeProjectsDir?: string;
   codexDbPath?: string;
+  cursorStateDir?: string;
 }
 
 export interface ReportResult {
@@ -201,10 +202,12 @@ export async function runReport(opts: ReportCommandOptions = {}): Promise<Report
   if (opts.project !== undefined) collectOpts.projectCwd = opts.project;
   if (opts.claudeProjectsDir !== undefined) collectOpts.claudeProjectsDir = opts.claudeProjectsDir;
   if (opts.codexDbPath !== undefined) collectOpts.codexDbPath = opts.codexDbPath;
+  if (opts.cursorStateDir !== undefined) collectOpts.cursorStateDir = opts.cursorStateDir;
   if (opts.tool) {
     collectOpts.sources = {
       claude: opts.tool === 'claude',
       codex: opts.tool === 'codex',
+      cursor: opts.tool === 'cursor',
     };
   }
   const top = opts.top ?? 10;

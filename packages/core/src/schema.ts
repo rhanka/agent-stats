@@ -11,7 +11,10 @@
  * - `kind` is the discriminant; the union is exhaustive (use `assertNever`).
  */
 
-export type Tool = 'claude' | 'codex';
+export type Tool = 'claude' | 'codex' | 'cursor';
+
+/** Which local surface produced the session (mainly to split Codex). */
+export type Surface = 'cli' | 'vscode' | 'exec' | 'cursor';
 
 /**
  * Token usage breakdown for a single turn.
@@ -72,6 +75,8 @@ export interface SessionStartEvent extends EventBase {
   /** Codex: nickname auto-assigned to subagents (philosopher names). */
   agentNickname?: string;
   cliVersion?: string;
+  /** Local surface (Codex CLI/VSCode/exec, or Cursor), derived from originator. */
+  surface?: Surface;
   /** True if originated from a parent thread (Codex fork or Claude Task). */
   isSubagent: boolean;
 }

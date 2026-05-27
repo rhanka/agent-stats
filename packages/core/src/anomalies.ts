@@ -14,7 +14,7 @@
  * is deferred to WP7 (LLM phase 2).
  */
 
-import type { SessionEvent } from './schema.js';
+import type { SessionEvent, Tool } from './schema.js';
 
 export type AnomalyType =
   | 'runaway_compactions'
@@ -27,7 +27,7 @@ export type AnomalySeverity = 'low' | 'medium' | 'high';
 
 export interface Anomaly {
   sessionId: string;
-  tool: 'claude' | 'codex';
+  tool: Tool;
   projectCwd: string;
   type: AnomalyType;
   severity: AnomalySeverity;
@@ -46,7 +46,7 @@ export interface DetectAnomaliesOptions {
 
 interface SessionAcc {
   sessionId: string;
-  tool: 'claude' | 'codex';
+  tool: Tool;
   projectCwd: string;
   compactions: number;
   toolCallTotal: number;

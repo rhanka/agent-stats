@@ -15,6 +15,14 @@ export {
   type IndexCodexOptions,
   type ParseCodexRolloutOptions,
 } from './parsers/codex.js';
+export {
+  indexCursorSessions,
+  parseCursorComposer,
+  collectCursorEvents,
+  defaultCursorDbPath,
+  type CursorIndexEntry,
+  type IndexCursorOptions,
+} from './parsers/cursor.js';
 export { collect, decodeClaudeProjectDir, type CollectOptions } from './collect.js';
 export {
   aggregateSessions,

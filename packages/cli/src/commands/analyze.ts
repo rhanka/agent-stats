@@ -18,7 +18,7 @@ import {
 export interface AnalyzeCommandOptions {
   since?: string;
   until?: string;
-  tool?: 'claude' | 'codex';
+  tool?: 'claude' | 'codex' | 'cursor';
   project?: string;
   model?: string;
   limit?: number;
@@ -26,6 +26,7 @@ export interface AnalyzeCommandOptions {
   mesh?: LlmMeshLike;
   claudeProjectsDir?: string;
   codexDbPath?: string;
+  cursorStateDir?: string;
 }
 
 export interface AnalyzeResult {
@@ -74,8 +75,13 @@ export async function runAnalyze(opts: AnalyzeCommandOptions = {}): Promise<Anal
   if (opts.project !== undefined) collectOpts.projectCwd = opts.project;
   if (opts.claudeProjectsDir !== undefined) collectOpts.claudeProjectsDir = opts.claudeProjectsDir;
   if (opts.codexDbPath !== undefined) collectOpts.codexDbPath = opts.codexDbPath;
+  if (opts.cursorStateDir !== undefined) collectOpts.cursorStateDir = opts.cursorStateDir;
   if (opts.tool) {
-    collectOpts.sources = { claude: opts.tool === 'claude', codex: opts.tool === 'codex' };
+    collectOpts.sources = {
+      claude: opts.tool === 'claude',
+      codex: opts.tool === 'codex',
+      cursor: opts.tool === 'cursor',
+    };
   }
   const mesh = opts.mesh ?? (await loadMeshFromEnv());
   if (!mesh) {

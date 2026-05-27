@@ -24,6 +24,8 @@ export interface WebCommandOptions {
   claudeProjectsDir?: string;
   /** Override the Codex sqlite index path. */
   codexDbPath?: string;
+  /** Override the Cursor state dir (for tests and isolated runs). */
+  cursorStateDir?: string;
 }
 
 const MIME_TYPES: Record<string, string> = {
@@ -100,12 +102,17 @@ async function serveStaticFile(
 function makeHandleApi(defaults: {
   claudeProjectsDir?: string;
   codexDbPath?: string;
+  cursorStateDir?: string;
 }): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const since = url.searchParams.get('since') ?? undefined;
     const until = url.searchParams.get('until') ?? undefined;
-    const tool = (url.searchParams.get('tool') ?? undefined) as 'claude' | 'codex' | undefined;
+    const tool = (url.searchParams.get('tool') ?? undefined) as
+      | 'claude'
+      | 'codex'
+      | 'cursor'
+      | undefined;
     const project = url.searchParams.get('project') ?? undefined;
     const common = {
       ...(since ? { since } : {}),
@@ -114,6 +121,7 @@ function makeHandleApi(defaults: {
       ...(project ? { project } : {}),
       ...(defaults.claudeProjectsDir ? { claudeProjectsDir: defaults.claudeProjectsDir } : {}),
       ...(defaults.codexDbPath ? { codexDbPath: defaults.codexDbPath } : {}),
+      ...(defaults.cursorStateDir ? { cursorStateDir: defaults.cursorStateDir } : {}),
     };
     try {
       if (url.pathname === '/api/stats') {
@@ -145,6 +153,7 @@ export async function startWebServer(opts: WebCommandOptions = {}): Promise<Star
   const handleApi = makeHandleApi({
     ...(opts.claudeProjectsDir ? { claudeProjectsDir: opts.claudeProjectsDir } : {}),
     ...(opts.codexDbPath ? { codexDbPath: opts.codexDbPath } : {}),
+    ...(opts.cursorStateDir ? { cursorStateDir: opts.cursorStateDir } : {}),
   });
   const server = createServer((req, res) => {
     const url = req.url ?? '/';

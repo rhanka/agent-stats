@@ -11,7 +11,14 @@
  * tracked separately so they never get mixed.
  */
 
-import { ZERO_USAGE, addUsage, type SessionEvent, type Tool, type Usage } from './schema.js';
+import {
+  ZERO_USAGE,
+  addUsage,
+  type SessionEvent,
+  type Tool,
+  type Surface,
+  type Usage,
+} from './schema.js';
 import { DEFAULT_RATE_CARD, estimateCost, resolveRates, type ModelRates } from './rate-card.js';
 
 // ---------------------------------------------------------------------------
@@ -21,6 +28,7 @@ import { DEFAULT_RATE_CARD, estimateCost, resolveRates, type ModelRates } from '
 export interface SessionAggregate {
   sessionId: string;
   tool: Tool;
+  surface?: Surface;
   projectCwd: string;
   model: string;
   startTs: string;
@@ -58,6 +66,8 @@ export interface WeeklyAggregation {
   skillInvocations: number;
   skillsByName: Record<string, number>;
   compactions: number;
+  /** Session counts by local surface (e.g. Codex cli vs vscode). */
+  sessionsBySurface: Record<string, number>;
   estimatedCost: { codexCredits: number; claudeUsdCents: number; unknown: number };
   rateLimitMax?: { primaryPercent: number; secondaryPercent: number };
 }
@@ -152,6 +162,7 @@ export async function aggregateSessions(
         if (ev.model) s.model = ev.model;
         s.isSubagent = ev.isSubagent;
         if (ev.forkedFromId) s.forkedFromId = ev.forkedFromId;
+        if (ev.surface) s.surface = ev.surface;
         break;
       }
       case 'session_end':
@@ -245,6 +256,7 @@ function emptyWeekly(
     skillInvocations: 0,
     skillsByName: {},
     compactions: 0,
+    sessionsBySurface: {},
     estimatedCost: { ...ZERO_COST },
     parentIds: new Set(),
   };
@@ -280,6 +292,7 @@ export function bucketWeekly(sessions: SessionAggregate[]): WeeklyAggregation[] 
     mergeCounts(acc.skillsByName, s.skillsByName);
     acc.skillInvocations += s.skillInvocations;
     acc.compactions += s.compactions;
+    if (s.surface) acc.sessionsBySurface[s.surface] = (acc.sessionsBySurface[s.surface] ?? 0) + 1;
     acc.estimatedCost = addCost(acc.estimatedCost, s.estimatedCost);
     if (s.rateLimitMax) {
       const prev = acc.rateLimitMax;
