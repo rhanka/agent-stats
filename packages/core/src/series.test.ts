@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { weeklySeries, type SeriesRow } from './series';
+import { weeklySeries, type SeriesRow } from './series.js';
 
 const row = (
   over: Partial<SeriesRow> & { weekStart: string; tool: 'claude' | 'codex' },

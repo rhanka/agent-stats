@@ -1,6 +1,8 @@
 /**
  * Pure helpers to turn weekly aggregation rows into single-series chart data
- * for the design-system LineChart / Sparkline (which take {x,y}[] / number[]).
+ * (e.g. for the design-system LineChart / Sparkline which take {x,y}[] /
+ * number[]). Lives in core (no UI dependency) so it is unit-tested without the
+ * SvelteKit toolchain.
  */
 
 export type SeriesMetric = 'tokens' | 'credits' | 'quota7d' | 'sessions';
