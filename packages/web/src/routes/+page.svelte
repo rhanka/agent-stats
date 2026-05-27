@@ -373,8 +373,8 @@
       </Select>
     </div>
   </div>
-  <div class="chart" bind:clientWidth={chartWidth}>
-    {#if timeSeries.length > 1}
+  {#if timeSeries.length > 1}
+    <div class="chart" bind:clientWidth={chartWidth}>
       <LineChart
         data={timeSeries}
         width={chartWidth}
@@ -383,10 +383,8 @@
         tone="category1"
         label={`${METRIC_LABELS[chartMetric]} per week (${chartTool})`}
       />
-    {:else}
-      <p class="hint">Not enough weeks in this window to plot a trend.</p>
-    {/if}
-  </div>
+    </div>
+  {/if}
 
   <h2>Top projects</h2>
   <div class="chart" bind:clientWidth={chartWidth}>
