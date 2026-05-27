@@ -4,12 +4,12 @@
  */
 
 export type SeriesMetric = 'tokens' | 'credits' | 'quota7d' | 'sessions';
-export type ToolFilter = 'all' | 'claude' | 'codex';
+export type ToolFilter = 'all' | 'claude' | 'codex' | 'cursor';
 
 /** The subset of a WeeklyAggregation row the charts need (structural). */
 export interface SeriesRow {
   weekStart: string;
-  tool: 'claude' | 'codex';
+  tool: 'claude' | 'codex' | 'cursor';
   sessions: number;
   totalUsage: {
     newInputTokens: number;

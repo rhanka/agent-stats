@@ -18,7 +18,7 @@
   type WeeklyAggregation = {
     weekStart: string;
     projectCwd: string;
-    tool: 'claude' | 'codex';
+    tool: 'claude' | 'codex' | 'cursor';
     model: string;
     sessions: number;
     turns: number;
@@ -31,6 +31,7 @@
     };
     estimatedCost: { codexCredits: number; claudeUsdCents: number; unknown: number };
     rateLimitMax?: { primaryPercent: number; secondaryPercent: number };
+    sessionsBySurface?: Record<string, number>;
     repoUrl?: string;
   };
 
@@ -165,6 +166,18 @@
     };
   });
 
+  // Codex sessions by local surface (cli / vscode / exec) over the window.
+  let surfaces = $derived.by<Record<string, number>>(() => {
+    const s: Record<string, number> = {};
+    for (const r of displayRows) {
+      for (const [k, v] of Object.entries(r.sessionsBySurface ?? {})) {
+        if (k === 'cursor') continue; // cursor is its own tool row
+        s[k] = (s[k] ?? 0) + v;
+      }
+    }
+    return s;
+  });
+
   // --- Time-series data for the charts ---
   let timeSeries = $derived(weeklySeries(displayRows, chartMetric, chartTool));
   // Sparkline values (number[]) for each summary card.
@@ -258,7 +271,9 @@
 {/snippet}
 
 {#snippet toolCell(row: DataTableRow)}
-  <Badge tone={row.tool === 'claude' ? 'info' : 'success'}>{row.tool}</Badge>
+  <Badge tone={row.tool === 'claude' ? 'info' : row.tool === 'codex' ? 'success' : 'warning'}>
+    {row.tool}
+  </Badge>
 {/snippet}
 
 <h1>Overview — last {sinceDays} days</h1>
@@ -328,6 +343,11 @@
       <div class="label">Codex quota peak</div>
       <div class="value">{totals.peak7d.toFixed(0)}%</div>
       <div class="sub">7-day window · 5h peak {totals.peak5h.toFixed(0)}%</div>
+      {#if Object.keys(surfaces).length}
+        <div class="sub">
+          Codex: {(surfaces.cli ?? 0) + (surfaces.exec ?? 0)} CLI · {surfaces.vscode ?? 0} VSCode
+        </div>
+      {/if}
       {#if spark.quota.length > 1}<div class="spark"><Sparkline data={spark.quota} tone="warning" /></div>{/if}
     </Card>
   </section>
@@ -345,6 +365,7 @@
         <option value="all">All tools</option>
         <option value="claude">Claude</option>
         <option value="codex">Codex</option>
+        <option value="cursor">Cursor</option>
       </Select>
     </div>
   </div>

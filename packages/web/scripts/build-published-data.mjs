@@ -24,7 +24,7 @@ const cli = path.resolve(here, '../../cli/dist/cli.js');
 const staticDir = path.resolve(here, '../static');
 
 const daysArg = process.argv.indexOf('--days');
-const days = daysArg !== -1 ? Number(process.argv[daysArg + 1]) : 360;
+const days = daysArg !== -1 ? Number(process.argv[daysArg + 1]) : 420;
 const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 
 /** Resolve a local path to a public `owner/repo` + URL, or null. */
