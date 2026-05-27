@@ -273,24 +273,23 @@ capté (originator `codex_vscode`) → juste l'étiqueter par surface.
 - [x] Régénérer le snapshot publié (remonte à avr. 2025) ; vérif CLI/build
       (+ screenshot live quand MCP reconnecté).
 
-### WP14 — Graphe « Usage over time » enrichi (status: 0/?, brainstorm)
+### WP14 — Graphe « Usage over time » enrichi (status: 0/5, 0%)
 
-Intention (demande utilisateur, à raffiner en brainstorm + Q/R → spec) :
+Spec : `docs/superpowers/specs/2026-05-27-usage-chart-enrichment-design.md`
+(approuvé). Décisions Q/R : cached isolé+exclu des in/out ; split fournisseur
+en **small multiples** (DS mono-série) ; daily <30j via **snapshot hybride**
+(`published-daily.json` ~60j).
 
-- Métrique : pouvoir choisir **tokens in** / **tokens out** / **in+out**
-  (aujourd'hui seulement in+out).
-- **Cached tokens** : pouvoir les **splitter** (série/part dédiée) ou les
-  **retirer** — décision à prendre (proposition attendue).
-- **Splitter les courbes par fournisseur** (claude / codex / cursor…) —
-  plutôt qu'un toggle unique, un **sélecteur à cases à cocher** (multi-série).
-  Contrainte : `LineChart` du design system est **mono-série** → arbitrage
-  small-multiples vs overlay custom à trancher.
-- **Granularité** : pour les fenêtres **< 30 j**, proposer un découpage
-  **par jour** (aujourd'hui tout est hebdo). Contrainte : le snapshot publié
-  est agrégé **hebdo** → le daily nécessite un nouveau chemin de données
-  (daily seulement en mode API local, ou enrichir le snapshot).
-
-Spec à écrire après le brainstorm.
+- [ ] Core : `granularity?: 'day'|'week'` sur la ligne ; `dayStartIso` +
+      `aggregateByPeriod(events, granularity)` (bucket jour/semaine). **Tests**.
+- [ ] Core `series.ts` : métriques `inputNew | output | inout | cached`
+      (cache exclu de in/out) ; `periodSeries` granularité-agnostique. **Tests**.
+- [ ] CLI : `runStats` `granularity 'day'|'week'|'auto'` (<30j → day).
+- [ ] Générateur : émettre `published-daily.json` (~60 derniers jours, daily,
+      même relabel + anonymisation).
+- [ ] Web : dropdown métrique (4 options) + **checkboxes** fournisseurs →
+      small multiples ; source daily vs weekly selon `sinceDays<30`. Vérif
+      headless + build.
 
 ### WP9 — CI + release (status: 4/4, 100%)
 
@@ -318,7 +317,8 @@ Spec à écrire après le brainstorm.
 | 11        | Corrections post-revue        |      4 |      4 |    100% | completed   |
 | 12        | Usage charts + 180/360j       |      5 |      5 |    100% | completed   |
 | 13        | Source Cursor + surface Codex |      6 |      6 |    100% | completed   |
-| **Total** |                               | **81** | **80** | **99%** |             |
+| 14        | Usage chart enrichi           |      5 |      0 |      0% | in_progress |
+| **Total** |                               | **86** | **80** | **93%** |             |
 
 > ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
 > utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés
