@@ -4,8 +4,10 @@ import {
   aggregateSessions,
   aggregateWeekly,
   bucketWeekly,
+  bucketBy,
   cacheEfficiency,
   weekStartIso,
+  dayStartIso,
 } from './aggregations.js';
 import type { SessionEvent } from './schema.js';
 
@@ -251,6 +253,47 @@ describe('bucketWeekly', () => {
     expect(gpt54?.sessions).toBe(1);
     expect(gpt54?.subagentSessions).toBe(0);
     expect(gpt54?.uniqueParents).toBe(0);
+  });
+});
+
+describe('dayStartIso + bucketBy("day")', () => {
+  const mk = (id: string, startTs: string) => ({
+    sessionId: id,
+    tool: 'codex' as const,
+    projectCwd: '/p/a',
+    model: 'gpt-5.5',
+    startTs,
+    endTs: startTs,
+    durationMs: 0,
+    turns: 1,
+    totalUsage: { ...zeroUsage() },
+    isSubagent: false,
+    toolCalls: 0,
+    toolCallsByCategory: {},
+    toolCallsByName: {},
+    skillInvocations: 0,
+    skillsByName: {},
+    compactions: 0,
+    estimatedCost: { codexCredits: 0, claudeUsdCents: 0, unknown: 0 },
+  });
+
+  it('dayStartIso returns the calendar day', () => {
+    expect(dayStartIso('2026-05-20T23:59:00Z')).toBe('2026-05-20');
+  });
+
+  it('buckets per calendar day (same week → separate daily rows) and tags granularity', () => {
+    // Same week as the weekly test, but two different days → 2 daily rows.
+    const rows = bucketBy(
+      [mk('s1', '2026-05-18T10:00:00Z'), mk('s2', '2026-05-19T10:00:00Z')],
+      'day',
+    );
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.weekStart)).toEqual(['2026-05-18', '2026-05-19']);
+    expect(rows.every((r) => r.granularity === 'day')).toBe(true);
+    // Weekly bucketing of the same sessions collapses them into one row.
+    expect(
+      bucketWeekly([mk('s1', '2026-05-18T10:00:00Z'), mk('s2', '2026-05-19T10:00:00Z')]),
+    ).toHaveLength(1);
   });
 });
 

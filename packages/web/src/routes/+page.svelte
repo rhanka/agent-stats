@@ -13,11 +13,7 @@
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
   import { base } from '$app/paths';
-  import {
-    weeklySeries,
-    type SeriesMetric,
-    type ToolFilter,
-  } from '@sentropic/agent-stats-core';
+  import { periodSeries, type SeriesMetric } from '@sentropic/agent-stats-core';
 
   type WeeklyAggregation = {
     weekStart: string;
@@ -40,6 +36,8 @@
   };
 
   let rows: WeeklyAggregation[] = $state([]);
+  // Published daily snapshot (recent ~60d), used for the <30d chart on the static site.
+  let dailyRows: WeeklyAggregation[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
   let published = $state(false);
@@ -50,14 +48,22 @@
   let sinceDays = $state(90);
 
   // "Usage over time" chart controls.
-  let chartMetric = $state<SeriesMetric>('tokens');
-  let chartTool = $state<ToolFilter>('all');
+  // Chart metric (token components have cached isolated & excluded from in/out).
+  let chartMetric = $state<SeriesMetric>('inout');
   let chartWidth = $state(900);
 
-  const METRIC_LABELS: Record<SeriesMetric, string> = {
-    tokens: 'Tokens (in+out)',
+  // Per-provider split via checkboxes → small multiples (one chart per checked).
+  const ALL_PROVIDERS = ['claude', 'codex', 'cursor'] as const;
+  type Provider = (typeof ALL_PROVIDERS)[number];
+  let providers = $state<Record<Provider, boolean>>({ claude: true, codex: true, cursor: true });
+
+  const METRIC_LABELS: Partial<Record<SeriesMetric, string>> = {
+    inputNew: 'Input (new)',
+    output: 'Output',
+    inout: 'In + Out',
+    cached: 'Cached (read)',
     credits: 'Codex credits',
-    quota7d: 'Quota % (7d peak)',
+    quota7d: 'Quota % (7d)',
     sessions: 'Sessions',
   };
 
@@ -79,6 +85,12 @@
         if (!snap.ok) throw new Error(`snapshot HTTP ${snap.status}`);
         rows = (await snap.json()) as WeeklyAggregation[];
         published = true;
+        try {
+          const d = await fetch(`${base}/published-daily.json`);
+          if (d.ok) dailyRows = (await d.json()) as WeeklyAggregation[];
+        } catch {
+          /* daily optional */
+        }
         try {
           const meta = await fetch(`${base}/published-meta.json`);
           if (meta.ok) publishedAt = ((await meta.json()) as { generatedAt?: string }).generatedAt ?? null;
@@ -183,13 +195,30 @@
   });
 
   // --- Time-series data for the charts ---
-  let timeSeries = $derived(weeklySeries(displayRows, chartMetric, chartTool));
+  // For <30d windows use daily buckets. In API mode `rows` already comes daily
+  // (the CLI auto-resolves); in published mode we read the daily snapshot.
+  let chartRows = $derived.by<WeeklyAggregation[]>(() => {
+    if (sinceDays >= 30) return displayRows;
+    if (!published) return displayRows; // API already returned daily rows
+    if (dailyRows.length === 0) return displayRows;
+    const cutoff = new Date(Date.now() - sinceDays * 86_400_000).toISOString().slice(0, 10);
+    return dailyRows.filter((r) => r.weekStart >= cutoff);
+  });
+
+  // One series per checked provider → small multiples.
+  let providerSeries = $derived.by(() =>
+    ALL_PROVIDERS.filter((p) => providers[p]).map((p) => ({
+      provider: p,
+      points: periodSeries(chartRows, chartMetric, p),
+    })),
+  );
+
   // Sparkline values (number[]) for each summary card.
   let spark = $derived({
-    sessions: weeklySeries(displayRows, 'sessions', 'all').map((p) => p.y),
-    tokens: weeklySeries(displayRows, 'tokens', 'all').map((p) => p.y),
-    credits: weeklySeries(displayRows, 'credits', 'all').map((p) => p.y),
-    quota: weeklySeries(displayRows, 'quota7d', 'all').map((p) => p.y),
+    sessions: periodSeries(displayRows, 'sessions', 'all').map((p) => p.y),
+    tokens: periodSeries(displayRows, 'tokens', 'all').map((p) => p.y),
+    credits: periodSeries(displayRows, 'credits', 'all').map((p) => p.y),
+    quota: periodSeries(displayRows, 'quota7d', 'all').map((p) => p.y),
   });
 
   let costTotalString = $derived.by(() => {
@@ -360,31 +389,39 @@
     <h2>Usage over time</h2>
     <div class="chart-controls">
       <Select size="sm" aria-label="Metric" bind:value={chartMetric}>
-        <option value="tokens">Tokens (in+out)</option>
+        <option value="inputNew">Input (new)</option>
+        <option value="output">Output</option>
+        <option value="inout">In + Out</option>
+        <option value="cached">Cached (read)</option>
         <option value="credits">Codex credits</option>
-        <option value="quota7d">Quota % (7d peak)</option>
+        <option value="quota7d">Quota % (7d)</option>
         <option value="sessions">Sessions</option>
       </Select>
-      <Select size="sm" aria-label="Tool" bind:value={chartTool}>
-        <option value="all">All tools</option>
-        <option value="claude">Claude</option>
-        <option value="codex">Codex</option>
-        <option value="cursor">Cursor</option>
-      </Select>
+      <div class="providers">
+        {#each ALL_PROVIDERS as p (p)}
+          <label class="provider"><input type="checkbox" bind:checked={providers[p]} /> {p}</label>
+        {/each}
+      </div>
     </div>
   </div>
-  {#if timeSeries.length > 1}
-    <div class="chart" bind:clientWidth={chartWidth}>
-      <LineChart
-        data={timeSeries}
-        width={chartWidth}
-        height={240}
-        smooth
-        tone="category1"
-        label={`${METRIC_LABELS[chartMetric]} per week (${chartTool})`}
-      />
-    </div>
-  {/if}
+  <p class="hint">Per {sinceDays < 30 ? 'day' : 'week'} · cached read is isolated (excluded from In+Out).</p>
+  <div class="chart" bind:clientWidth={chartWidth}>
+    {#each providerSeries as s (s.provider)}
+      {#if s.points.length > 1}
+        <div class="multiple">
+          <div class="multiple-title">{s.provider}</div>
+          <LineChart
+            data={s.points}
+            width={chartWidth}
+            height={180}
+            smooth
+            tone="category1"
+            label={`${METRIC_LABELS[chartMetric]} per ${sinceDays < 30 ? 'day' : 'week'} (${s.provider})`}
+          />
+        </div>
+      {/if}
+    {/each}
+  </div>
 
   <h2>Top projects</h2>
   <div class="chart" bind:clientWidth={chartWidth}>
@@ -465,11 +502,35 @@
   }
   .chart-controls {
     display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .providers {
+    display: flex;
     gap: 12px;
+  }
+  .provider {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    text-transform: capitalize;
+    cursor: pointer;
   }
   .chart {
     width: 100%;
     margin: 8px 0 24px;
+  }
+  .multiple {
+    margin-bottom: 12px;
+  }
+  .multiple-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    color: var(--st-semantic-text-secondary, var(--st-semantic-text-primary));
+    margin-bottom: 2px;
   }
   code {
     background: var(--st-semantic-surface-subtle, var(--st-semantic-surface-raised));

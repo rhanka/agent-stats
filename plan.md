@@ -273,21 +273,21 @@ capté (originator `codex_vscode`) → juste l'étiqueter par surface.
 - [x] Régénérer le snapshot publié (remonte à avr. 2025) ; vérif CLI/build
       (+ screenshot live quand MCP reconnecté).
 
-### WP14 — Graphe « Usage over time » enrichi (status: 0/5, 0%)
+### WP14 — Graphe « Usage over time » enrichi (status: 5/5, 100%)
 
 Spec : `docs/superpowers/specs/2026-05-27-usage-chart-enrichment-design.md`
 (approuvé). Décisions Q/R : cached isolé+exclu des in/out ; split fournisseur
 en **small multiples** (DS mono-série) ; daily <30j via **snapshot hybride**
 (`published-daily.json` ~60j).
 
-- [ ] Core : `granularity?: 'day'|'week'` sur la ligne ; `dayStartIso` +
+- [x] Core : `granularity?: 'day'|'week'` sur la ligne ; `dayStartIso` +
       `aggregateByPeriod(events, granularity)` (bucket jour/semaine). **Tests**.
-- [ ] Core `series.ts` : métriques `inputNew | output | inout | cached`
+- [x] Core `series.ts` : métriques `inputNew | output | inout | cached`
       (cache exclu de in/out) ; `periodSeries` granularité-agnostique. **Tests**.
-- [ ] CLI : `runStats` `granularity 'day'|'week'|'auto'` (<30j → day).
-- [ ] Générateur : émettre `published-daily.json` (~60 derniers jours, daily,
+- [x] CLI : `runStats` `granularity 'day'|'week'|'auto'` (<30j → day).
+- [x] Générateur : émettre `published-daily.json` (~60 derniers jours, daily,
       même relabel + anonymisation).
-- [ ] Web : dropdown métrique (4 options) + **checkboxes** fournisseurs →
+- [x] Web : dropdown métrique (4 options) + **checkboxes** fournisseurs →
       small multiples ; source daily vs weekly selon `sinceDays<30`. Vérif
       headless + build.
 
@@ -317,8 +317,8 @@ en **small multiples** (DS mono-série) ; daily <30j via **snapshot hybride**
 | 11        | Corrections post-revue        |      4 |      4 |    100% | completed   |
 | 12        | Usage charts + 180/360j       |      5 |      5 |    100% | completed   |
 | 13        | Source Cursor + surface Codex |      6 |      6 |    100% | completed   |
-| 14        | Usage chart enrichi           |      5 |      0 |      0% | in_progress |
-| **Total** |                               | **86** | **80** | **93%** |             |
+| 14        | Usage chart enrichi           |      5 |      5 |    100% | completed   |
+| **Total** |                               | **86** | **85** | **99%** |             |
 
 > ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
 > utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés

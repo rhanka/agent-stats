@@ -27,12 +27,13 @@ async function main(argv: string[]): Promise<number> {
 
   program
     .command('stats')
-    .description('Compute weekly aggregations and output JSON or a compact table.')
+    .description('Compute weekly (or daily) aggregations and output JSON or a compact table.')
     .option('--since <iso>', 'Lower bound (ISO 8601)')
     .option('--until <iso>', 'Upper bound (ISO 8601)')
-    .option('--tool <name>', 'Restrict to one tool: claude | codex')
+    .option('--tool <name>', 'Restrict to one tool: claude | codex | cursor')
     .option('--project <cwd>', 'Filter by project cwd (exact or prefix with trailing /)')
     .option('--format <fmt>', 'Output format: json | table', 'json')
+    .option('--granularity <g>', 'Bucket granularity: day | week | auto', 'auto')
     .option('--out <file>', 'Write to file instead of stdout')
     .action(async (opts) => {
       const result = await runStats({
@@ -41,6 +42,7 @@ async function main(argv: string[]): Promise<number> {
         tool: opts.tool,
         project: opts.project,
         format: opts.format,
+        granularity: opts.granularity,
       });
       if (opts.out) await writeFile(opts.out, result.output);
       else process.stdout.write(`${result.output}\n`);

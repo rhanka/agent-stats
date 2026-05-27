@@ -4,9 +4,10 @@
  */
 
 import {
-  aggregateWeekly,
+  aggregateByPeriod,
   collect,
   type CollectOptions,
+  type Granularity,
   type WeeklyAggregation,
 } from '@sentropic/agent-stats-core';
 
@@ -16,10 +17,26 @@ export interface StatsCommandOptions {
   tool?: 'claude' | 'codex' | 'cursor';
   project?: string;
   format?: 'json' | 'table';
+  /** day | week | auto (default: auto → day when the window is < 30 days). */
+  granularity?: Granularity | 'auto';
   /** Override default scan dirs (used by tests). */
   claudeProjectsDir?: string;
   codexDbPath?: string;
   cursorStateDir?: string;
+}
+
+const DAY_MS = 86_400_000;
+
+/** Resolve auto granularity: daily when the window spans < 30 days. */
+function resolveGranularity(
+  g: StatsCommandOptions['granularity'],
+  since: Date | undefined,
+  until: Date | undefined,
+): Granularity {
+  if (g === 'day' || g === 'week') return g;
+  if (!since) return 'week';
+  const end = until ?? new Date();
+  return end.getTime() - since.getTime() < 30 * DAY_MS ? 'day' : 'week';
 }
 
 export interface StatsResult {
@@ -137,7 +154,8 @@ export async function runStats(opts: StatsCommandOptions = {}): Promise<StatsRes
       cursor: opts.tool === 'cursor',
     };
   }
-  const rows = await aggregateWeekly(collect(collectOpts));
+  const granularity = resolveGranularity(opts.granularity, since, until);
+  const rows = await aggregateByPeriod(collect(collectOpts), granularity);
   const format = opts.format ?? 'json';
   const output = format === 'table' ? renderTable(rows) : JSON.stringify(rows, null, 2);
   return { output, rows };

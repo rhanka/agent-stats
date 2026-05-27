@@ -70,6 +70,8 @@ export interface WeeklyAggregation {
   sessionsBySurface: Record<string, number>;
   estimatedCost: { codexCredits: number; claudeUsdCents: number; unknown: number };
   rateLimitMax?: { primaryPercent: number; secondaryPercent: number };
+  /** Bucket granularity of this row (absent ⇒ 'week', back-compat). */
+  granularity?: Granularity;
 }
 
 export interface AggregateOptions {
@@ -102,6 +104,20 @@ export function weekStartIso(iso: string): string {
   const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + diff));
   return monday.toISOString().slice(0, 10);
+}
+
+/** Calendar day (UTC) of `iso`, e.g. "2026-05-27". */
+export function dayStartIso(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+export type Granularity = 'day' | 'week';
+
+/** Bucket start for a granularity. */
+function bucketStartIso(iso: string, granularity: Granularity): string {
+  return granularity === 'day' ? dayStartIso(iso) : weekStartIso(iso);
 }
 
 function emptySessionAggregate(): SessionAggregate {
@@ -238,12 +254,14 @@ function emptyWeekly(
   projectCwd: string,
   tool: Tool,
   model: string,
+  granularity: Granularity,
 ): WeeklyAccumulator {
   return {
     weekStart,
     projectCwd,
     tool,
     model,
+    granularity,
     sessions: 0,
     subagentSessions: 0,
     uniqueParents: 0,
@@ -268,16 +286,19 @@ function mergeCounts(target: Record<string, number>, src: Record<string, number>
   }
 }
 
-/** Roll SessionAggregates into weekly rows. */
-export function bucketWeekly(sessions: SessionAggregate[]): WeeklyAggregation[] {
+/** Roll SessionAggregates into buckets of the given granularity (default week). */
+export function bucketBy(
+  sessions: SessionAggregate[],
+  granularity: Granularity = 'week',
+): WeeklyAggregation[] {
   const buckets = new Map<string, WeeklyAccumulator>();
   for (const s of sessions) {
-    const week = weekStartIso(s.startTs);
+    const week = bucketStartIso(s.startTs, granularity);
     if (!week) continue;
     const key = weeklyKey(week, s.projectCwd, s.tool, s.model);
     let acc = buckets.get(key);
     if (!acc) {
-      acc = emptyWeekly(week, s.projectCwd, s.tool, s.model);
+      acc = emptyWeekly(week, s.projectCwd, s.tool, s.model, granularity);
       buckets.set(key, acc);
     }
     acc.sessions += 1;
@@ -319,10 +340,24 @@ export function bucketWeekly(sessions: SessionAggregate[]): WeeklyAggregation[] 
     );
 }
 
+/** Roll SessionAggregates into weekly rows (the `'week'` granularity). */
+export function bucketWeekly(sessions: SessionAggregate[]): WeeklyAggregation[] {
+  return bucketBy(sessions, 'week');
+}
+
 /**
  * High-level helper: events → SessionAggregate[] → WeeklyAggregation[].
  * The caller does not need to know about the two passes.
  */
+export async function aggregateByPeriod(
+  events: AsyncIterable<SessionEvent> | Iterable<SessionEvent>,
+  granularity: Granularity = 'week',
+  opts: AggregateOptions = {},
+): Promise<WeeklyAggregation[]> {
+  const sessions = await aggregateSessions(events, opts);
+  return bucketBy(sessions, granularity);
+}
+
 export async function aggregateWeekly(
   events: AsyncIterable<SessionEvent> | Iterable<SessionEvent>,
   opts: AggregateOptions = {},

@@ -5,7 +5,17 @@
  * SvelteKit toolchain.
  */
 
-export type SeriesMetric = 'tokens' | 'credits' | 'quota7d' | 'sessions';
+export type SeriesMetric =
+  // headline / sparkline metrics
+  | 'tokens'
+  | 'credits'
+  | 'quota7d'
+  | 'sessions'
+  // token-component metrics (chart selector; cached is isolated, excluded from in/out)
+  | 'inputNew'
+  | 'output'
+  | 'inout'
+  | 'cached';
 export type ToolFilter = 'all' | 'claude' | 'codex' | 'cursor';
 
 /** The subset of a WeeklyAggregation row the charts need (structural). */
@@ -18,6 +28,7 @@ export interface SeriesRow {
     cachedInputTokens: number;
     cacheWriteTokens: number;
     outputTokens: number;
+    reasoningTokens?: number;
   };
   estimatedCost: { codexCredits: number };
   rateLimitMax?: { secondaryPercent: number };
@@ -29,29 +40,35 @@ export interface SeriesPoint {
 }
 
 function metricValue(r: SeriesRow, metric: SeriesMetric): number {
+  const u = r.totalUsage;
+  const inputNew = u.newInputTokens + u.cacheWriteTokens;
+  const output = u.outputTokens + (u.reasoningTokens ?? 0);
   switch (metric) {
-    case 'tokens':
-      return (
-        r.totalUsage.newInputTokens +
-        r.totalUsage.cachedInputTokens +
-        r.totalUsage.cacheWriteTokens +
-        r.totalUsage.outputTokens
-      );
+    case 'tokens': // legacy headline metric: all input + output (cache included)
+      return u.newInputTokens + u.cachedInputTokens + u.cacheWriteTokens + u.outputTokens;
     case 'credits':
       return r.estimatedCost.codexCredits;
     case 'sessions':
       return r.sessions;
     case 'quota7d':
       return r.rateLimitMax?.secondaryPercent ?? 0;
+    case 'inputNew':
+      return inputNew;
+    case 'output':
+      return output;
+    case 'inout': // cached read excluded
+      return inputNew + output;
+    case 'cached':
+      return u.cachedInputTokens;
   }
 }
 
 /**
- * Bucket rows by `weekStart` for one metric and tool filter.
- * Most metrics sum within a week; `quota7d` is a rate-limit peak so it takes
- * the max. Returned points are sorted ascending by week.
+ * Bucket rows by their bucket start (`weekStart`, which holds the day for daily
+ * rows) for one metric and tool filter. Most metrics sum within a bucket;
+ * `quota7d` is a rate-limit peak so it takes the max. Sorted ascending.
  */
-export function weeklySeries(
+export function periodSeries(
   rows: SeriesRow[],
   metric: SeriesMetric,
   tool: ToolFilter,
@@ -67,3 +84,6 @@ export function weeklySeries(
   }
   return [...byWeek.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([x, y]) => ({ x, y }));
 }
+
+/** @deprecated use {@link periodSeries} (granularity-agnostic). */
+export const weeklySeries = periodSeries;

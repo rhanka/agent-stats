@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { weeklySeries, type SeriesRow } from './series.js';
+import { weeklySeries, periodSeries, type SeriesRow } from './series.js';
 
 const row = (
   over: Partial<SeriesRow> & { weekStart: string; tool: 'claude' | 'codex' },
@@ -75,5 +75,34 @@ describe('weeklySeries', () => {
   it('defaults quota to 0 when rateLimitMax is absent', () => {
     const s = weeklySeries([row({ weekStart: '2026-01-05', tool: 'claude' })], 'quota7d', 'all');
     expect(s[0]?.y).toBe(0);
+  });
+});
+
+describe('periodSeries token-component metrics (cached isolated)', () => {
+  const r = row({
+    weekStart: '2026-05-04',
+    tool: 'codex',
+    totalUsage: {
+      newInputTokens: 100,
+      cachedInputTokens: 9000, // big replay
+      cacheWriteTokens: 10,
+      outputTokens: 50,
+      reasoningTokens: 5,
+    },
+  });
+  const at = (m: Parameters<typeof periodSeries>[1]) =>
+    periodSeries([r], m, 'all').find((p) => p.x === '2026-05-04')?.y;
+
+  it('inputNew = newInput + cacheWrite (no cached read)', () => {
+    expect(at('inputNew')).toBe(110);
+  });
+  it('output = output + reasoning', () => {
+    expect(at('output')).toBe(55);
+  });
+  it('inout excludes cached read', () => {
+    expect(at('inout')).toBe(110 + 55);
+  });
+  it('cached is the isolated replay volume', () => {
+    expect(at('cached')).toBe(9000);
   });
 });
