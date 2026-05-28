@@ -10,13 +10,21 @@
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import { cleanFile, type CleanMode, type CleanStats } from '@sentropic/agent-stats-core';
+import {
+  cleanFile,
+  loadSecretPatterns,
+  type CleanMode,
+  type CleanStats,
+  type CustomSecretPattern,
+} from '@sentropic/agent-stats-core';
 
 export interface CleanCommandOptions {
   input: string;
   mode?: CleanMode;
   out?: string;
   maxToolResultBytes?: number;
+  /** Path to a YAML file of extra org-specific secret regexes. */
+  secretPatterns?: string;
 }
 
 export interface CleanCommandResult {
@@ -56,6 +64,10 @@ export async function runClean(opts: CleanCommandOptions): Promise<CleanCommandR
   const inputStat = await stat(opts.input);
   const baseDir = inputStat.isDirectory() ? opts.input : path.dirname(opts.input);
 
+  const customPatterns: CustomSecretPattern[] = opts.secretPatterns
+    ? loadSecretPatterns(opts.secretPatterns)
+    : [];
+
   const perFile: CleanStats[] = [];
   const totals = { files: 0, secretsFound: 0, truncations: 0, bytesIn: 0, bytesOut: 0 };
 
@@ -72,6 +84,7 @@ export async function runClean(opts: CleanCommandOptions): Promise<CleanCommandR
       ...(opts.maxToolResultBytes !== undefined
         ? { maxToolResultBytes: opts.maxToolResultBytes }
         : {}),
+      ...(customPatterns.length ? { customPatterns } : {}),
     });
     perFile.push(r);
     totals.files += 1;

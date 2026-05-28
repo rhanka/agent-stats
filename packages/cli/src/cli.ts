@@ -117,12 +117,14 @@ async function main(argv: string[]): Promise<number> {
       (v) => parseInt(v, 10),
       2048,
     )
+    .option('--secret-patterns <file>', 'YAML file of extra org-specific secret regexes')
     .action(async (opts) => {
       const result = await runClean({
         input: opts.input,
         mode: opts.mode,
         out: opts.out,
         maxToolResultBytes: opts.maxToolResultBytes,
+        secretPatterns: opts.secretPatterns,
       });
       process.stdout.write(`${result.output}\n`);
     });
