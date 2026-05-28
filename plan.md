@@ -110,13 +110,15 @@ jour le plan.md (single source of truth living document).
 - [x] Tests CLI (in-process : 4 stats + 3 report = 7 tests verts)
 - [x] Doc `cli/README.md` détaillée
 
-### WP6 — Cleanser secrets (status: 4/5, 80%)
+### WP6 — Cleanser secrets (status: 5/5, 100%)
 
 - [x] Wrapper `secretlint` + preset recommend (28 rules : AWS, Anthropic,
       OpenAI, GitHub, GitLab, Slack, Stripe, JWT/privatekey, etc.)
-- [ ] Custom Sentropic patterns (config yaml extensible) — différé
-      (preset recommend suffisant pour MVP ; à reprendre si patterns
-      internes apparaissent)
+- [x] **Custom patterns (YAML extensible)** : `loadSecretPatterns(file)` +
+      passe regex mergée avec secretlint (dedup des chevauchements), tag
+      `<<SECRET:custom_<id>:hash>>`. CLI `clean --secret-patterns <file>`.
+      Exemple `packages/core/examples/secret-patterns.example.yaml`.
+      Dep `js-yaml`. Tests : loader (skip invalides) + scan (global) + E2E.
 - [x] Modes `--archive` (default), `--inplace` (avec `.bak`), `--llm-input`
       (avec `--max-tool-result-bytes`)
 - [x] CLI sub-command `agent-stats clean --input <path> --mode <m> --out <dir>`
@@ -302,23 +304,23 @@ en **small multiples** (DS mono-série) ; daily <30j via **snapshot hybride**
 
 ## Status (mis à jour automatiquement)
 
-| WP        | Titre                         |  Total |   Done |       % | État        |
-| --------- | ----------------------------- | -----: | -----: | ------: | ----------- |
-| 1         | Repo bootstrap                |     14 |     14 |    100% | completed   |
-| 2         | Parsers MVP                   |     10 |     10 |    100% | completed   |
-| 3         | Aggregations MVP              |      8 |      8 |    100% | completed   |
-| 4         | CLI MVP                       |      6 |      6 |    100% | completed   |
-| 6         | Cleanser secrets              |      5 |      4 |     80% | in_progress |
-| 5         | Anomaly heuristiques          |      4 |      4 |    100% | completed   |
-| 8         | Web dashboard                 |      5 |      5 |    100% | completed   |
-| 7         | Phase 2 LLM                   |      5 |      5 |    100% | completed   |
-| 9         | CI + release                  |      4 |      4 |    100% | completed   |
-| 10        | Pages + DS Sentropic          |      5 |      5 |    100% | completed   |
-| 11        | Corrections post-revue        |      4 |      4 |    100% | completed   |
-| 12        | Usage charts + 180/360j       |      5 |      5 |    100% | completed   |
-| 13        | Source Cursor + surface Codex |      6 |      6 |    100% | completed   |
-| 14        | Usage chart enrichi           |      5 |      5 |    100% | completed   |
-| **Total** |                               | **86** | **85** | **99%** |             |
+| WP        | Titre                         |  Total |   Done |        % | État      |
+| --------- | ----------------------------- | -----: | -----: | -------: | --------- |
+| 1         | Repo bootstrap                |     14 |     14 |     100% | completed |
+| 2         | Parsers MVP                   |     10 |     10 |     100% | completed |
+| 3         | Aggregations MVP              |      8 |      8 |     100% | completed |
+| 4         | CLI MVP                       |      6 |      6 |     100% | completed |
+| 6         | Cleanser secrets              |      5 |      5 |     100% | completed |
+| 5         | Anomaly heuristiques          |      4 |      4 |     100% | completed |
+| 8         | Web dashboard                 |      5 |      5 |     100% | completed |
+| 7         | Phase 2 LLM                   |      5 |      5 |     100% | completed |
+| 9         | CI + release                  |      4 |      4 |     100% | completed |
+| 10        | Pages + DS Sentropic          |      5 |      5 |     100% | completed |
+| 11        | Corrections post-revue        |      4 |      4 |     100% | completed |
+| 12        | Usage charts + 180/360j       |      5 |      5 |     100% | completed |
+| 13        | Source Cursor + surface Codex |      6 |      6 |     100% | completed |
+| 14        | Usage chart enrichi           |      5 |      5 |     100% | completed |
+| **Total** |                               | **86** | **86** | **100%** |           |
 
 > ⚠️ Le **% mesure la couverture de specs, pas la valeur**. Après la revue
 > utilisateur du 2026-05-25, 2 bugs fonctionnels bloquants ont été trouvés
