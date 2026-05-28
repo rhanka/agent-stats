@@ -66,11 +66,14 @@
      title lines up with the page heading (the header is full-bleed; the body
      was a narrow centered column, which read as misaligned). */
   :global([data-st-theme] .st-header) {
+    box-sizing: border-box; /* keep width:100% inclusive of the padding (no overflow) */
     padding-left: 32px;
     padding-right: 32px;
   }
+  /* Full-bleed like the DS header (same 32px gutter), so the header bar and the
+     page content share the exact same left/right edges at any screen width. */
   main {
-    max-width: 1400px;
+    max-width: none;
     margin: 0;
     padding: 32px;
   }

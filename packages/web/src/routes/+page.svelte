@@ -214,6 +214,13 @@
     return dailyRows.filter((r) => r.weekStart >= cutoff);
   });
 
+  // Which providers have any data in the current window (to disable empty boxes).
+  let providerHasData = $derived.by<Record<Provider, boolean>>(() => {
+    const has = { claude: false, codex: false, cursor: false };
+    for (const r of chartRows) if (r.tool in has) has[r.tool as Provider] = true;
+    return has;
+  });
+
   // One overlaid series per checked provider (only those with data).
   let providerSeries = $derived.by(() =>
     ALL_PROVIDERS.filter((p) => providers[p])
@@ -412,7 +419,10 @@
       </Select>
       <div class="providers">
         {#each ALL_PROVIDERS as p (p)}
-          <label class="provider"><input type="checkbox" bind:checked={providers[p]} /> {p}</label>
+          <label class="provider" class:disabled={!providerHasData[p]}>
+            <input type="checkbox" bind:checked={providers[p]} disabled={!providerHasData[p]} />
+            {p}
+          </label>
         {/each}
       </div>
     </div>
@@ -521,6 +531,10 @@
     font-size: 13px;
     text-transform: capitalize;
     cursor: pointer;
+  }
+  .provider.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
   .chart {
     width: 100%;
