@@ -60,7 +60,13 @@ export {
   type StorageAdapter,
   type StorageFilter,
 } from './storage.js';
-export { scanString, type SecretMatch } from './secrets.js';
+export {
+  scanString,
+  loadSecretPatterns,
+  type SecretMatch,
+  type CustomSecretPattern,
+  type ScanOptions,
+} from './secrets.js';
 export { cleanFile, type CleanFileOptions, type CleanMode, type CleanStats } from './cleanser.js';
 export {
   detectAnomalies,

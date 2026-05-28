@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { scanString } from './secrets.js';
+import { scanString, type CustomSecretPattern } from './secrets.js';
 
 export type CleanMode = 'archive' | 'inplace' | 'llm-input';
 
@@ -41,6 +41,11 @@ export interface CleanFileOptions {
    * Default false.
    */
   skipSecrets?: boolean;
+  /**
+   * Extra org-specific secret regexes (on top of secretlint preset-recommend),
+   * typically loaded from a YAML file via `loadSecretPatterns`.
+   */
+  customPatterns?: CustomSecretPattern[];
 }
 
 export interface CleanStats {
@@ -80,12 +85,13 @@ interface CleanCtx {
   maxToolResultBytes: number;
   truncate: boolean;
   scanSecrets: boolean;
+  customPatterns: CustomSecretPattern[];
 }
 
 async function cleanString(s: string, ctx: CleanCtx): Promise<string> {
   let out = s;
   if (ctx.scanSecrets && s.length >= 8) {
-    const matches = await scanString(s);
+    const matches = await scanString(s, { customPatterns: ctx.customPatterns });
     if (matches.length > 0) {
       ctx.secretsFound += matches.length;
       out = redact(s, matches);
@@ -129,6 +135,7 @@ export async function cleanFile(opts: CleanFileOptions): Promise<CleanStats> {
     maxToolResultBytes: opts.maxToolResultBytes ?? 2048,
     truncate: mode === 'llm-input',
     scanSecrets: !opts.skipSecrets,
+    customPatterns: opts.customPatterns ?? [],
   };
 
   const lines = src.split('\n');
