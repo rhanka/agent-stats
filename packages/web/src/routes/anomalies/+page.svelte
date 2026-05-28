@@ -9,6 +9,8 @@
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
   import { base } from '$app/paths';
+  import { i18n } from '$lib/i18n.svelte';
+  const t = (k: Parameters<typeof i18n.t>[0], v?: Record<string, string | number>) => i18n.t(k, v);
 
   type Anomaly = {
     sessionId: string;
@@ -70,14 +72,14 @@
     })),
   );
 
-  const columns: DataTableColumn[] = [
-    { key: 'severity', label: 'Severity', cell: severityCell, sortable: true },
-    { key: 'type', label: 'Type', sortable: true },
-    { key: 'tool', label: 'Tool', cell: toolCell, sortable: true },
-    { key: 'project', label: 'Project', cell: projectCell },
-    { key: 'session', label: 'Session', cell: monoCell },
-    { key: 'evidence', label: 'Evidence', cell: monoCell },
-  ];
+  let columns = $derived<DataTableColumn[]>([
+    { key: 'severity', label: t('col_severity'), cell: severityCell, sortable: true },
+    { key: 'type', label: t('col_type'), sortable: true },
+    { key: 'tool', label: t('col_tool'), cell: toolCell, sortable: true },
+    { key: 'project', label: t('col_project'), cell: projectCell },
+    { key: 'session', label: t('col_session'), cell: monoCell },
+    { key: 'evidence', label: t('col_evidence'), cell: monoCell },
+  ]);
 </script>
 
 {#snippet severityCell(row: DataTableRow)}
@@ -102,23 +104,22 @@
   {/if}
 {/snippet}
 
-<h1>Anomalies — last {sinceDays} days</h1>
+<h1>{t('anomalies_title', { n: sinceDays })}</h1>
 
 <div class="controls">
   <Select size="sm" aria-label="Since" bind:value={sinceDays} onchange={() => load()}>
-    <option value={2}>2 days</option>
-    <option value={7}>7 days</option>
-    <option value={14}>14 days</option>
-    <option value={30}>30 days</option>
+    {#each [2, 7, 14, 30] as d (d)}
+      <option value={d}>{t('window_days', { n: d })}</option>
+    {/each}
   </Select>
-  <Button variant="secondary" size="sm" onclick={() => load()}>Refresh</Button>
+  <Button variant="secondary" size="sm" onclick={() => load()}>{t('refresh')}</Button>
 </div>
 
 {#if loading}
-  <p>Loading…</p>
+  <p>{t('loading')}</p>
 {:else if error}
   <EmptyState
-    title="No live data"
+    title={t('no_data_title')}
     message="Anomaly detection runs against your local sessions through a small API. The static site has no backend, so there is nothing to show here. Run it locally to analyze your own data."
   >
     {#snippet action()}
@@ -131,8 +132,8 @@
     <div class="banner">
       <Alert
         tone="info"
-        title="Published snapshot — real usage"
-        message="The maintainer's own sessions, computed locally and committed. Run `npx @sentropic/agent-stats web` for your own."
+        title={t('published_title')}
+        message={t('published_msg', { at: '' })}
       />
     </div>
   {/if}
@@ -141,7 +142,7 @@
     rows={anomalyRows}
     size="sm"
     sortable
-    emptyLabel="No anomalies detected."
+    emptyLabel={t('no_anomalies')}
   />
 {/if}
 
