@@ -1,6 +1,6 @@
 {
   "name": "@sentropic/agent-stats",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI for agent-stats — analyze Claude Code and Codex CLI sessions.",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,7 +24,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@sentropic/agent-stats-core": "0.1.0",
+    "@sentropic/agent-stats-core": "0.2.0",
     "commander": "^14.0.3"
   },
   "repository": {
