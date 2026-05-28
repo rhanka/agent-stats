@@ -461,6 +461,20 @@ until, projectCwd, ...})` async-iterator qui scanne `~/.claude/projects/`
   Codex / `~$` notionnel Claude / pic quota 5h-7j) et polish DS. 79 tests
   verts. Live peuplé : https://agent-stats.sent-tech.ca/. Leçon : le % de
   cases cochées ≠ valeur livrée — toujours vérifier sur données réelles.
+- 2026-05-27 : **WP12 (charts) + WP13 (Cursor + surface Codex) livrés.**
+  LineChart hebdo + sparklines + sélecteur 180/360 j (WP12) ; source Cursor
+  (95 lignes, depuis avr. 2025) + surface Codex cli/vscode (WP13). 95 tests.
+- 2026-05-27 : **WP14 (graphe enrichi) livré + itérations UX.** Métriques
+  Input/Output/In+Out/**Cached isolé** ; **daily ≤60 j** (snapshot hybride
+  `published-daily.json`) ; **courbes superposées + légende** (composant
+  `MultiLineChart`, le LineChart DS étant mono-série) ; axes compacts
+  (2.35G) ; hover-valeurs ; checkbox fournisseur désactivée si vide.
+- 2026-05-28 : **Header refait au standard + i18n FR/EN.** App-shell
+  hand-rollé (logo, nav pills à état actif, burger responsive, conteneur
+  centré aligné — la cause de l'alignement était un débordement box-sizing
+  de 64px). Sélecteur **thème retiré** (jugé inutile). i18n complet du
+  chrome (store `$lib/i18n.svelte`). Fix CI annexes : `.prettierignore`,
+  coverage core+cli, `pages.yml` build core avant web. CI + Pages verts.
 
 ---
 
