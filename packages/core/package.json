@@ -1,6 +1,6 @@
 {
   "name": "@sentropic/agent-stats-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Parsers, aggregations and schema for agent-stats (Claude Code + Codex CLI session analyzer).",
   "type": "module",
   "main": "./dist/index.js",
