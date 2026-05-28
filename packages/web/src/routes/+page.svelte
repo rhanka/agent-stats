@@ -14,6 +14,8 @@
   import { base } from '$app/paths';
   import { periodSeries, type SeriesMetric } from '@sentropic/agent-stats-core';
   import MultiLineChart from '$lib/MultiLineChart.svelte';
+  import { i18n } from '$lib/i18n.svelte';
+  const t = (k: Parameters<typeof i18n.t>[0], v?: Record<string, string | number>) => i18n.t(k, v);
 
   // Daily granularity threshold (windows ≤ this many days are bucketed per day).
   const DAILY_MAX_DAYS = 60;
@@ -65,15 +67,15 @@
   type Provider = (typeof ALL_PROVIDERS)[number];
   let providers = $state<Record<Provider, boolean>>({ claude: true, codex: true, cursor: true });
 
-  const METRIC_LABELS: Partial<Record<SeriesMetric, string>> = {
-    inputNew: 'Input (new)',
-    output: 'Output',
-    inout: 'In + Out',
-    cached: 'Cached (read)',
-    credits: 'Codex credits',
-    quota7d: 'Quota % (7d)',
-    sessions: 'Sessions',
-  };
+  let METRIC_LABELS = $derived<Partial<Record<SeriesMetric, string>>>({
+    inputNew: t('metric_inputNew'),
+    output: t('metric_output'),
+    inout: t('metric_inout'),
+    cached: t('metric_cached'),
+    credits: t('metric_credits'),
+    quota7d: t('metric_quota'),
+    sessions: t('metric_sessions'),
+  });
 
   async function load(): Promise<void> {
     loading = true;
@@ -276,11 +278,11 @@
     })),
   );
 
-  const projectColumns: DataTableColumn[] = [
-    { key: 'project', label: 'Project', cell: projectCell },
-    { key: 'sessions', label: 'Sessions', align: 'end' },
-    { key: 'tokens', label: 'Tokens (in+out)', align: 'end' },
-  ];
+  let projectColumns = $derived<DataTableColumn[]>([
+    { key: 'project', label: t('col_project'), cell: projectCell },
+    { key: 'sessions', label: t('col_sessions'), align: 'end' },
+    { key: 'tokens', label: t('col_tokens'), align: 'end' },
+  ]);
 
   // --- All aggregations table ---
   let aggRows = $derived.by<DataTableRow[]>(() =>
@@ -301,17 +303,17 @@
     })),
   );
 
-  const aggColumns: DataTableColumn[] = [
-    { key: 'week', label: 'Week', sortable: true },
-    { key: 'tool', label: 'Tool', cell: toolCell, sortable: true },
-    { key: 'project', label: 'Project', cell: projectCell },
-    { key: 'model', label: 'Model', sortable: true },
-    { key: 'sessions', label: 'Sess', align: 'end', sortable: true },
-    { key: 'turns', label: 'Turns', align: 'end', sortable: true },
-    { key: 'input', label: 'In', align: 'end' },
-    { key: 'output', label: 'Out', align: 'end' },
-    { key: 'cost', label: 'Cost', align: 'end' },
-  ];
+  let aggColumns = $derived<DataTableColumn[]>([
+    { key: 'week', label: t('col_week'), sortable: true },
+    { key: 'tool', label: t('col_tool'), cell: toolCell, sortable: true },
+    { key: 'project', label: t('col_project'), cell: projectCell },
+    { key: 'model', label: t('col_model'), sortable: true },
+    { key: 'sessions', label: t('col_sess'), align: 'end', sortable: true },
+    { key: 'turns', label: t('col_turns'), align: 'end', sortable: true },
+    { key: 'input', label: t('col_in'), align: 'end' },
+    { key: 'output', label: t('col_out'), align: 'end' },
+    { key: 'cost', label: t('col_cost'), align: 'end' },
+  ]);
 </script>
 
 {#snippet projectCell(row: DataTableRow)}
@@ -328,27 +330,22 @@
   </Badge>
 {/snippet}
 
-<h1>Overview — last {sinceDays} days</h1>
+<h1>{t('overview_title', { n: sinceDays })}</h1>
 
 <div class="controls">
   <Select size="sm" aria-label="Since" bind:value={sinceDays} onchange={() => load()}>
-    <option value={2}>2 days</option>
-    <option value={7}>7 days</option>
-    <option value={14}>14 days</option>
-    <option value={30}>30 days</option>
-    <option value={60}>60 days</option>
-    <option value={90}>90 days</option>
-    <option value={180}>180 days</option>
-    <option value={360}>360 days</option>
+    {#each [2, 7, 14, 30, 60, 90, 180, 360] as d (d)}
+      <option value={d}>{t('window_days', { n: d })}</option>
+    {/each}
   </Select>
-  <Button variant="secondary" size="sm" onclick={() => load()}>Refresh</Button>
+  <Button variant="secondary" size="sm" onclick={() => load()}>{t('refresh')}</Button>
 </div>
 
 {#if loading}
-  <p>Loading…</p>
+  <p>{t('loading')}</p>
 {:else if error}
   <EmptyState
-    title="No live data"
+    title={t('no_data_title')}
     message="This dashboard reads your local sessions through a small API. The static site (e.g. agent-stats.sent-tech.ca) has no backend, so there is nothing to show here. Run it locally to analyze your own data."
   >
     {#snippet action()}
@@ -361,41 +358,43 @@
     <div class="banner">
       <Alert
         tone="info"
-        title="Published snapshot — real usage"
-        message={`The maintainer's own Claude Code + Codex usage, computed locally and committed (projects link to their public git repos)${publishedAt ? `. Generated ${publishedAt.slice(0, 10)}` : ''}. Run \`npx @sentropic/agent-stats web\` for your own.`}
+        title={t('published_title')}
+        message={t('published_msg', {
+          at: publishedAt ? t('generated', { d: publishedAt.slice(0, 10) }) : '',
+        })}
       />
     </div>
   {/if}
   <section class="cards">
     <Card>
-      <div class="label">Sessions</div>
+      <div class="label">{t('sessions')}</div>
       <div class="value">{totals.sessions}</div>
       {#if spark.sessions.length > 1}<div class="spark"><Sparkline data={spark.sessions} tone="neutral" /></div>{/if}
     </Card>
     <Card>
-      <div class="label">Turns</div>
+      <div class="label">{t('turns')}</div>
       <div class="value">{totals.turns}</div>
     </Card>
     <Card>
-      <div class="label">Input tokens</div>
+      <div class="label">{t('input_tokens')}</div>
       <div class="value">{fmt(totals.inputTotal)}</div>
-      <div class="sub">{totals.cacheHit.toFixed(1)}% cache hit</div>
+      <div class="sub">{t('cache_hit', { p: totals.cacheHit.toFixed(1) })}</div>
       {#if spark.tokens.length > 1}<div class="spark"><Sparkline data={spark.tokens} tone="neutral" /></div>{/if}
     </Card>
     <Card>
-      <div class="label">Output tokens</div>
+      <div class="label">{t('output_tokens')}</div>
       <div class="value">{fmt(totals.outputTotal)}</div>
     </Card>
     <Card>
-      <div class="label">Estimated cost</div>
+      <div class="label">{t('estimated_cost')}</div>
       <div class="value">{costTotalString}</div>
-      <div class="sub">Codex = credits · Claude ~$ notional (flat-rate Max)</div>
+      <div class="sub">{t('cost_note')}</div>
       {#if spark.credits.length > 1}<div class="spark"><Sparkline data={spark.credits} tone="neutral" /></div>{/if}
     </Card>
     <Card>
-      <div class="label">Codex quota peak</div>
+      <div class="label">{t('codex_quota_peak')}</div>
       <div class="value">{totals.peak7d.toFixed(0)}%</div>
-      <div class="sub">7-day window · 5h peak {totals.peak5h.toFixed(0)}%</div>
+      <div class="sub">{t('quota_sub', { p: totals.peak5h.toFixed(0) })}</div>
       {#if Object.keys(surfaces).length}
         <div class="sub">
           Codex: {(surfaces.cli ?? 0) + (surfaces.exec ?? 0)} CLI · {surfaces.vscode ?? 0} VSCode
@@ -406,16 +405,16 @@
   </section>
 
   <div class="section-head">
-    <h2>Usage over time</h2>
+    <h2>{t('usage_over_time')}</h2>
     <div class="chart-controls">
       <Select size="sm" aria-label="Metric" bind:value={chartMetric}>
-        <option value="inputNew">Input (new)</option>
-        <option value="output">Output</option>
-        <option value="inout">In + Out</option>
-        <option value="cached">Cached (read)</option>
-        <option value="credits">Codex credits</option>
-        <option value="quota7d">Quota % (7d)</option>
-        <option value="sessions">Sessions</option>
+        <option value="inputNew">{t('metric_inputNew')}</option>
+        <option value="output">{t('metric_output')}</option>
+        <option value="inout">{t('metric_inout')}</option>
+        <option value="cached">{t('metric_cached')}</option>
+        <option value="credits">{t('metric_credits')}</option>
+        <option value="quota7d">{t('metric_quota')}</option>
+        <option value="sessions">{t('metric_sessions')}</option>
       </Select>
       <div class="providers">
         {#each ALL_PROVIDERS as p (p)}
@@ -428,8 +427,10 @@
     </div>
   </div>
   <p class="hint">
-    {METRIC_LABELS[chartMetric]} per {isDaily ? 'day' : 'week'} · cached read is isolated (excluded
-    from In+Out).
+    {t('chart_hint', {
+      metric: METRIC_LABELS[chartMetric] ?? '',
+      grain: isDaily ? t('per_day') : t('per_week'),
+    })}
   </p>
   <div class="chart" bind:clientWidth={chartWidth}>
     {#if providerSeries.length > 0}
@@ -437,7 +438,7 @@
     {/if}
   </div>
 
-  <h2>Top projects</h2>
+  <h2>{t('top_projects')}</h2>
   <div class="chart" bind:clientWidth={chartWidth}>
     {#if projectBars.length > 0}
       <BarChart
@@ -445,7 +446,7 @@
         width={chartWidth}
         height={Math.max(160, projectBars.length * 28)}
         orientation="horizontal"
-        label="Top projects by tokens (in+out)"
+        label={t('top_projects')}
       />
     {/if}
   </div>
@@ -453,17 +454,17 @@
     columns={projectColumns}
     rows={projectRows}
     size="sm"
-    emptyLabel="No data in this window."
+    emptyLabel={t('no_data_window')}
   />
 
-  <h2>All aggregations ({displayRows.length} rows)</h2>
+  <h2>{t('all_aggregations', { n: displayRows.length })}</h2>
   <DataTable
     columns={aggColumns}
     rows={aggRows}
     size="sm"
     sortable
     pageSize={25}
-    emptyLabel="No data in this window."
+    emptyLabel={t('no_data_window')}
   />
 {/if}
 
