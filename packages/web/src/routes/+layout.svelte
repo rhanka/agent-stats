@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ThemeProvider } from '@sentropic/design-system-svelte';
-  import { themeState, THEMES } from '$lib/theme.svelte';
+  import { themeState } from '$lib/theme.svelte';
   import { i18n, type Lang } from '$lib/i18n.svelte';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
@@ -53,16 +53,6 @@
         >
           <option value="en">EN</option>
           <option value="fr">FR</option>
-        </select>
-        <select
-          class="ctl"
-          aria-label="Theme"
-          value={themeState.id}
-          onchange={(e) => themeState.set((e.currentTarget as HTMLSelectElement).value)}
-        >
-          {#each Object.values(THEMES) as t (t.id)}
-            <option value={t.id}>{t.label}</option>
-          {/each}
         </select>
       </div>
     </div>
