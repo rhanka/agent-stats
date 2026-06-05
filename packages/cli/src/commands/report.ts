@@ -8,6 +8,9 @@ import {
   aggregateWeekly,
   cacheEfficiency,
   collect,
+  mcpBucket,
+  mergeNameCounts,
+  topN,
   totalInputTokens,
   type CollectOptions,
   type WeeklyAggregation,
@@ -189,6 +192,44 @@ function renderWeek(weekStart: string, rows: WeeklyAggregation[], top: number): 
     );
   }
   lines.push('');
+
+  // Top tools (MCP collapsed to a single mcp:server bucket), split by provider.
+  const claudeTools = mergeNameCounts(
+    rows.filter((r) => r.tool === 'claude').map((r) => r.toolCallsByName),
+    mcpBucket,
+  );
+  const codexTools = mergeNameCounts(
+    rows.filter((r) => r.tool === 'codex').map((r) => r.toolCallsByName),
+    mcpBucket,
+  );
+  const allTools = mergeNameCounts([claudeTools, codexTools]);
+  const topTools = topN(allTools, top);
+  if (topTools.length) {
+    lines.push('### Top tools');
+    lines.push('');
+    lines.push('| tool | claude | codex | total |');
+    lines.push('|---|---:|---:|---:|');
+    for (const t of topTools) {
+      lines.push(
+        `| \`${t.name}\` | ${claudeTools[t.name] ?? 0} | ${codexTools[t.name] ?? 0} | ${t.count} |`,
+      );
+    }
+    lines.push('');
+  }
+
+  // Top skills (Claude-only; Codex has no skill concept).
+  const skills = mergeNameCounts(rows.map((r) => r.skillsByName));
+  const topSkills = topN(skills, top);
+  if (topSkills.length) {
+    lines.push('### Top skills');
+    lines.push('');
+    lines.push('| skill | count |');
+    lines.push('|---|---:|');
+    for (const s of topSkills) {
+      lines.push(`| \`${s.name}\` | ${s.count} |`);
+    }
+    lines.push('');
+  }
 
   return lines.join('\n');
 }

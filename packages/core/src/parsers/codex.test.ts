@@ -73,14 +73,33 @@ describe('parseCodexRollout', () => {
     expect(comps).toHaveLength(1);
   });
 
-  it('emits tool_call for exec_command_end, mcp_tool_call_end and function_call', async () => {
+  it('counts each tool call once from response_item, not from the duplicate *_end events', async () => {
     const events = await collectAll();
     const calls = events.filter((e) => e.kind === 'tool_call');
-    expect(calls).toHaveLength(3);
+    const names = calls.flatMap((c) => (c.kind === 'tool_call' ? [c.name] : []));
+
+    // The model-issued tool calls come from response_item:
+    // function_call (exec_command, mcp__…), custom_tool_call (apply_patch),
+    // web_search_call.
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'exec_command',
+        'mcp__playwright__browser_snapshot',
+        'apply_patch',
+        'web_search',
+      ]),
+    );
+    expect(calls).toHaveLength(4);
+
+    // exec_command_end / mcp_tool_call_end are RESULT records: they must NOT
+    // add their own tool_call (that double-counts). The legacy exec_command_end
+    // naming ("bash" from command[0]) must be gone.
+    expect(names).not.toContain('bash');
+
     const cats = new Set(calls.flatMap((c) => (c.kind === 'tool_call' ? [c.category] : [])));
-    expect(cats.has('bash')).toBe(true);
+    expect(cats.has('bash')).toBe(true); // exec_command → bash
     expect(cats.has('mcp')).toBe(true);
-    expect(cats.has('native')).toBe(true);
+    expect(cats.has('native')).toBe(true); // apply_patch / web_search
   });
 });
 

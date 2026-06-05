@@ -103,6 +103,16 @@ export const DEFAULT_RATE_CARD: Record<string, ModelRates> = {
     outputPerMillion: 7500, // $75
     currency: 'claude_usd_cents',
   },
+  // Current generation. Same published Opus tier as 4-7 ($15 / $75); kept as an
+  // explicit entry (not a fallback) since it carries a large share of usage.
+  // Re-verify against Anthropic's pricing page if the Opus list price changes.
+  'claude-opus-4-8': {
+    newInputPerMillion: 1500, // $15
+    cachedPerMillion: 150, // $1.50 (cache_read 10%)
+    cacheWritePerMillion: 1875, // $18.75 (cache_creation 1.25×)
+    outputPerMillion: 7500, // $75
+    currency: 'claude_usd_cents',
+  },
   'claude-sonnet-4-6': {
     newInputPerMillion: 300,
     cachedPerMillion: 30,
@@ -135,10 +145,12 @@ export function resolveRates(
   for (const key of Object.keys(card)) {
     if (model.startsWith(key)) return card[key]!;
   }
-  // common families
-  if (model.startsWith('claude-haiku')) return card['claude-haiku-4-5-20251001']!;
-  if (model.startsWith('claude-sonnet')) return card['claude-sonnet-4-6']!;
-  if (model.startsWith('claude-opus')) return card['claude-opus-4-7']!;
+  // common families — also catch the bare short aliases (`opus`, `sonnet`,
+  // `haiku`) that Claude Code sometimes records instead of the full id.
+  if (model.startsWith('claude-haiku') || model === 'haiku')
+    return card['claude-haiku-4-5-20251001']!;
+  if (model.startsWith('claude-sonnet') || model === 'sonnet') return card['claude-sonnet-4-6']!;
+  if (model.startsWith('claude-opus') || model === 'opus') return card['claude-opus-4-7']!;
   return ZERO_RATES;
 }
 

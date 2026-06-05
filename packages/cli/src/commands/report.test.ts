@@ -65,6 +65,9 @@ describe('runReport', () => {
     expect(output).toContain('### Totals');
     expect(output).toContain('### Top projects');
     expect(output).toContain('### Top models');
+    expect(output).toContain('### Top tools');
+    // MCP tools are collapsed under a single mcp:server bucket.
+    expect(output).toContain('mcp:playwright');
   });
 
   it('honors --top to limit Top-N tables', async () => {

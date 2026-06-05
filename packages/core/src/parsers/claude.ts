@@ -159,6 +159,18 @@ export async function* parseClaudeSession(
       if (Array.isArray(msg.content)) {
         for (const c of msg.content) {
           if (c.type === 'tool_use' && c.name) {
+            // The `Skill` tool carries the real skill id in `input.skill`.
+            // Emit a skill_invoke (not a generic `Skill` tool_call) so the
+            // skill identity is preserved and the tool table isn't polluted.
+            if (c.name === 'Skill') {
+              const skillInput = c.input as { skill?: unknown } | undefined;
+              const skillName =
+                typeof skillInput?.skill === 'string' ? skillInput.skill : undefined;
+              if (skillName) {
+                buffer.push({ ...base, kind: 'skill_invoke', name: skillName });
+                continue;
+              }
+            }
             buffer.push({
               ...base,
               kind: 'tool_call',

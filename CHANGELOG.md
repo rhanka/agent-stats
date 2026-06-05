@@ -28,11 +28,27 @@ Additive, backward-compatible release.
   legend + hover), sparklines, top-projects bar chart, 2→360-day window,
   standard app-shell header, FR/EN i18n, published real-usage snapshot
   (weekly + 60-day daily), GitHub Pages deploy to agent-stats.sent-tech.ca.
+- **Tools & skills usage stats**: per-period `toolCallsByName` /
+  `skillsByName`, surfaced as Top-tools (split Claude / Codex) and Top-skills
+  tables in the CLI `report` and the web dashboard. MCP tools collapse to a
+  single `mcp:{server}` bucket; deterministic top-N ordering
+  (`mergeNameCounts` / `topN` / `mcpBucket` helpers).
 
 ### Fixed
 
 - Honest cost metric: Codex in credits, Claude as notional API-equivalent
   `~$` (flat-rate Max), real rate-limit quota peak (5h / 7d) surfaced.
+- **Cost accuracy**: bare model aliases (`opus` / `sonnet` / `haiku`) were
+  priced at $0 — now resolved to their tier; `claude-opus-4-8` registered
+  explicitly (same Opus tier as 4-7) instead of an implicit fallback.
+- **Claude skills were never counted** (`skillsByName` always empty): the
+  `Skill` tool now emits a `skill_invoke` from `input.skill` instead of a
+  generic tool_call.
+- **Codex tool double-count**: shell / patch / mcp / web_search were counted
+  twice (both `*_end` event_msg and `response_item`). Tool calls are now
+  counted once from `response_item` (function_call / custom_tool_call /
+  web_search_call / tool_search_call) — `apply_patch` and `web_search` were
+  previously missed.
 
 ## [0.1.0] — 2026-05-21
 
