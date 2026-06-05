@@ -12,7 +12,13 @@
   } from '@sentropic/design-system-svelte';
   import type { DataTableColumn, DataTableRow } from '@sentropic/design-system-svelte';
   import { base } from '$app/paths';
-  import { periodSeries, type SeriesMetric } from '@sentropic/agent-stats-core';
+  import {
+    periodSeries,
+    mcpBucket,
+    mergeNameCounts,
+    topN,
+    type SeriesMetric,
+  } from '@sentropic/agent-stats-core';
   import MultiLineChart from '$lib/MultiLineChart.svelte';
   import { i18n } from '$lib/i18n.svelte';
   const t = (k: Parameters<typeof i18n.t>[0], v?: Record<string, string | number>) => i18n.t(k, v);
@@ -42,6 +48,8 @@
     estimatedCost: { codexCredits: number; claudeUsdCents: number; unknown: number };
     rateLimitMax?: { primaryPercent: number; secondaryPercent: number };
     sessionsBySurface?: Record<string, number>;
+    toolCallsByName?: Record<string, number>;
+    skillsByName?: Record<string, number>;
     repoUrl?: string;
   };
 
@@ -284,6 +292,59 @@
     { key: 'tokens', label: t('col_tokens'), align: 'end' },
   ]);
 
+  // --- Top tools (MCP collapsed to mcp:server, split by provider) ---
+  let topTools = $derived.by(() => {
+    const claude = mergeNameCounts(
+      displayRows.filter((r) => r.tool === 'claude').map((r) => r.toolCallsByName ?? {}),
+      mcpBucket,
+    );
+    const codex = mergeNameCounts(
+      displayRows.filter((r) => r.tool === 'codex').map((r) => r.toolCallsByName ?? {}),
+      mcpBucket,
+    );
+    const all = mergeNameCounts([claude, codex]);
+    return topN(all, 15).map((e) => ({
+      name: e.name,
+      claude: claude[e.name] ?? 0,
+      codex: codex[e.name] ?? 0,
+      total: e.count,
+    }));
+  });
+
+  let toolRows = $derived.by<DataTableRow[]>(() =>
+    topTools.map((e) => ({
+      id: e.name,
+      tool: e.name,
+      claude: e.claude,
+      codex: e.codex,
+      total: e.total,
+    })),
+  );
+
+  let toolColumns = $derived<DataTableColumn[]>([
+    { key: 'tool', label: t('col_tool_name') },
+    { key: 'claude', label: 'Claude', align: 'end' },
+    { key: 'codex', label: 'Codex', align: 'end' },
+    { key: 'total', label: t('col_count'), align: 'end' },
+  ]);
+
+  // --- Top skills (Claude-only; Codex has no skill concept) ---
+  let topSkills = $derived.by(() =>
+    topN(
+      mergeNameCounts(displayRows.map((r) => r.skillsByName ?? {})),
+      15,
+    ),
+  );
+
+  let skillRows = $derived.by<DataTableRow[]>(() =>
+    topSkills.map((s) => ({ id: s.name, skill: s.name, count: s.count })),
+  );
+
+  let skillColumns = $derived<DataTableColumn[]>([
+    { key: 'skill', label: t('col_skill') },
+    { key: 'count', label: t('col_count'), align: 'end' },
+  ]);
+
   // --- All aggregations table ---
   let aggRows = $derived.by<DataTableRow[]>(() =>
     displayRows.map((r, i) => ({
@@ -456,6 +517,14 @@
     size="sm"
     emptyLabel={t('no_data_window')}
   />
+
+  <h2>{t('top_tools')}</h2>
+  <DataTable columns={toolColumns} rows={toolRows} size="sm" emptyLabel={t('no_data_window')} />
+
+  {#if skillRows.length > 0}
+    <h2>{t('top_skills')}</h2>
+    <DataTable columns={skillColumns} rows={skillRows} size="sm" emptyLabel={t('no_data_window')} />
+  {/if}
 
   <h2>{t('all_aggregations', { n: displayRows.length })}</h2>
   <DataTable

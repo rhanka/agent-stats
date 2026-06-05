@@ -345,41 +345,13 @@ export async function* parseCodexRollout(
           }
           break;
         }
-        case 'mcp_tool_call_end': {
-          const name = `mcp__${p.server ?? 'unknown'}__${p.tool ?? 'unknown'}`;
-          const out = p.result ? JSON.stringify(p.result).length : 0;
-          yield {
-            ...base,
-            kind: 'tool_call',
-            name,
-            category: 'mcp',
-            outputBytes: out,
-          };
-          break;
-        }
-        case 'exec_command_end': {
-          const out =
-            (p.aggregated_output?.length ?? 0) + (p.stdout?.length ?? 0) + (p.stderr?.length ?? 0);
-          const cmdArr = Array.isArray(p.command) ? p.command : [];
-          const cmdName = typeof cmdArr[0] === 'string' ? cmdArr[0] : 'shell';
-          yield {
-            ...base,
-            kind: 'tool_call',
-            name: cmdName,
-            category: 'bash',
-            outputBytes: out,
-            ...(typeof p.exit_code === 'number' && p.exit_code !== 0 ? { error: true } : {}),
-          };
-          break;
-        }
-        case 'web_search_end':
-          yield {
-            ...base,
-            kind: 'tool_call',
-            name: 'web_search',
-            category: 'native',
-          };
-          break;
+        // NOTE: shell / mcp / web_search tool calls are NOT counted here.
+        // The `*_end` records (exec_command_end, mcp_tool_call_end,
+        // web_search_end) are execution RESULTS — the actual model-issued tool
+        // calls are captured from `response_item` (function_call /
+        // custom_tool_call / web_search_call) below. Counting both would
+        // double-count (verified across the corpus: every rollout carrying
+        // exec_command_end also carries the matching function_call).
         default:
           break;
       }
@@ -388,13 +360,20 @@ export async function* parseCodexRollout(
 
     if (rec.type === 'response_item') {
       const p = (rec.payload ?? {}) as CodexResponseItemPayload;
-      if (p.type === 'function_call' && typeof p.name === 'string') {
+      if (
+        (p.type === 'function_call' || p.type === 'custom_tool_call') &&
+        typeof p.name === 'string'
+      ) {
         yield {
           ...base,
           kind: 'tool_call',
           name: p.name,
           category: categorizeCodexTool(p.name),
         };
+      } else if (p.type === 'web_search_call') {
+        yield { ...base, kind: 'tool_call', name: 'web_search', category: 'native' };
+      } else if (p.type === 'tool_search_call') {
+        yield { ...base, kind: 'tool_call', name: 'tool_search', category: 'native' };
       }
       continue;
     }
