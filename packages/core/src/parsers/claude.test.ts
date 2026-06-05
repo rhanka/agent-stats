@@ -6,17 +6,23 @@ import { parseClaudeSession } from './claude.js';
 import type { SessionEvent } from '../schema.js';
 import { totalInputTokens } from '../schema.js';
 
-const fixture = path.resolve(
+const fixturesDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../../tests/fixtures/claude/sample-session.jsonl',
+  '../../tests/fixtures/claude',
 );
+const fixture = path.join(fixturesDir, 'sample-session.jsonl');
+const skillFixture = path.join(fixturesDir, 'skill-session.jsonl');
 
-async function collectAll(): Promise<SessionEvent[]> {
+async function collectFrom(filePath: string): Promise<SessionEvent[]> {
   const events: SessionEvent[] = [];
-  for await (const ev of parseClaudeSession({ filePath: fixture })) {
+  for await (const ev of parseClaudeSession({ filePath })) {
     events.push(ev);
   }
   return events;
+}
+
+async function collectAll(): Promise<SessionEvent[]> {
+  return collectFrom(fixture);
 }
 
 describe('parseClaudeSession', () => {
@@ -68,6 +74,21 @@ describe('parseClaudeSession', () => {
     expect(mcp).toBeDefined();
     if (bash?.kind === 'tool_call') expect(bash.category).toBe('bash');
     if (mcp?.kind === 'tool_call') expect(mcp.category).toBe('mcp');
+  });
+
+  it('emits a skill_invoke (not a generic tool_call) for the Skill tool', async () => {
+    const events = await collectFrom(skillFixture);
+    const skills = events.filter((e) => e.kind === 'skill_invoke');
+    expect(skills).toHaveLength(1);
+    const s = skills[0];
+    if (s?.kind !== 'skill_invoke') throw new Error('unreachable');
+    expect(s.name).toBe('superpowers:brainstorming');
+
+    // The Skill tool must NOT leak into the tool_call table.
+    const toolCalls = events.filter((e) => e.kind === 'tool_call');
+    expect(toolCalls.some((c) => c.kind === 'tool_call' && c.name === 'Skill')).toBe(false);
+    // ...but the real Bash tool in the same message still counts.
+    expect(toolCalls.some((c) => c.kind === 'tool_call' && c.name === 'Bash')).toBe(true);
   });
 
   it('counts cache reads correctly on subsequent assistant turns', async () => {
