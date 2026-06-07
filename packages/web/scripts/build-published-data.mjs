@@ -12,20 +12,46 @@
  * generated files in packages/web/static/. CI cannot regenerate them.
  *
  *   node packages/web/scripts/build-published-data.mjs [--days 180]
+ *   node packages/web/scripts/build-published-data.mjs --incremental [--incremental-days 3]
+ *   node packages/web/scripts/build-published-data.mjs --incremental --refresh-anomalies
  */
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, readFileSync, mkdtempSync } from 'node:fs';
+import { existsSync, writeFileSync, readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+
+import { aggregateSessions, bucketBy, collect } from '@sentropic/agent-stats-core';
+
+import {
+  anonymize,
+  buildPrivateMap,
+  mergeAnomaliesByKey,
+  mergeIncrementalRows,
+  periodStartForIncremental,
+  publicRepoFromRemote,
+  scrubInvalidRepoRows,
+} from './published-data-utils.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const cli = path.resolve(here, '../../cli/dist/cli.js');
 const staticDir = path.resolve(here, '../static');
 
-const daysArg = process.argv.indexOf('--days');
-const days = daysArg !== -1 ? Number(process.argv[daysArg + 1]) : 420;
+function numberArg(name, fallback) {
+  const idx = process.argv.indexOf(name);
+  if (idx === -1) return fallback;
+  const n = Number(process.argv[idx + 1]);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`Invalid ${name}: ${process.argv[idx + 1]}`);
+  return n;
+}
+
+const days = numberArg('--days', 420);
 const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+const incremental = process.argv.includes('--incremental');
+const incrementalDays = numberArg('--incremental-days', 3);
+const refreshAnomalies = !incremental || process.argv.includes('--refresh-anomalies');
+const incrementalSince = periodStartForIncremental(new Date(), incrementalDays);
+const statsSince = incremental ? incrementalSince : since;
 
 /** Resolve a local path to a public `owner/repo` + URL, or null. */
 const repoCache = new Map();
@@ -38,13 +64,7 @@ function resolveRepo(cwd) {
     })
       .toString()
       .trim();
-    // git@host:owner/repo(.git)  |  https://host/owner/repo(.git)
-    const m = url.match(/[:/]([^/:]+\/[^/]+?)(?:\.git)?$/);
-    if (m) {
-      const slug = m[1];
-      const host = url.includes('gitlab') ? 'gitlab.com' : 'github.com';
-      result = { label: slug, url: `https://${host}/${slug}` };
-    }
+    result = publicRepoFromRemote(url);
   } catch {
     /* no remote */
   }
@@ -101,26 +121,6 @@ function mergeStats(rows) {
 }
 
 const tmp = mkdtempSync(path.join(tmpdir(), 'agent-stats-pub-'));
-/** Build a stable label → "private-N" map for every project without a public
- *  repo, ranked by total tokens, so we never publish a private/local name. */
-function buildPrivateMap(stats) {
-  const tot = new Map();
-  for (const r of stats) {
-    if (r.repoUrl) continue;
-    const u = r.totalUsage;
-    const t = u.newInputTokens + u.cachedInputTokens + u.cacheWriteTokens + u.outputTokens;
-    tot.set(r.projectCwd, (tot.get(r.projectCwd) ?? 0) + t);
-  }
-  const ranked = [...tot.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-  return new Map(ranked.map((k, i) => [k, `private-${i + 1}`]));
-}
-
-function anonymize(rows, privMap) {
-  for (const r of rows) {
-    if (!r.repoUrl && privMap.has(r.projectCwd)) r.projectCwd = privMap.get(r.projectCwd);
-  }
-  return rows;
-}
 
 function run(cmd, extraArgs = [], sinceDate = since) {
   // Write via the CLI's --out (clean writeFile) rather than capturing stdout,
@@ -136,16 +136,58 @@ function run(cmd, extraArgs = [], sinceDate = since) {
 
 const DAILY_DAYS = 65; // cover the 60-day daily window with margin
 const dailySince = new Date(Date.now() - DAILY_DAYS * 86_400_000).toISOString().slice(0, 10);
+const dailyRunSince = incremental ? statsSince : dailySince;
 
-console.error(`Building published data since ${since} (last ${days} days)…`);
-const stats = mergeStats(relabel(run('stats')));
-const anomalies = relabel(run('anomalies'));
-// Daily granularity for the recent window (powers the <30d chart on the static site).
-const daily = mergeStats(relabel(run('stats', ['--granularity', 'day'], dailySince)));
+function readPublished(name) {
+  const file = path.join(staticDir, name);
+  if (!existsSync(file)) return [];
+  return scrubInvalidRepoRows(JSON.parse(readFileSync(file, 'utf8')));
+}
+
+async function buildIncrementalStats(sinceDate) {
+  const sessions = await aggregateSessions(collect({ since: new Date(sinceDate) }));
+  return {
+    weekly: bucketBy(sessions, 'week'),
+    daily: bucketBy(sessions, 'day'),
+  };
+}
+
+console.error(
+  incremental
+    ? `Building incremental published data since ${statsSince} (last ${incrementalDays} days, snapped to week)…`
+    : `Building published data since ${since} (last ${days} days)…`,
+);
+
+let stats;
+let daily;
+if (incremental) {
+  const recent = await buildIncrementalStats(statsSince);
+  stats = mergeStats(relabel(recent.weekly));
+  daily = mergeStats(relabel(recent.daily));
+} else {
+  stats = mergeStats(relabel(run('stats', [], statsSince)));
+  // Daily granularity for the recent window (powers the <30d chart on the static site).
+  daily = mergeStats(relabel(run('stats', ['--granularity', 'day'], dailyRunSince)));
+}
+let anomalies = refreshAnomalies
+  ? relabel(run('anomalies', [], statsSince))
+  : readPublished('published-anomalies.json');
+
+if (incremental) {
+  stats = mergeIncrementalRows(readPublished('published-stats.json'), stats, statsSince);
+  daily = mergeIncrementalRows(
+    readPublished('published-daily.json').filter((row) => row.weekStart >= dailySince),
+    daily,
+    statsSince,
+  );
+  if (refreshAnomalies) {
+    anomalies = mergeAnomaliesByKey(readPublished('published-anomalies.json'), anomalies);
+  }
+}
 
 // Never publish a private/local project name: collapse non-public projects to
 // stable "private-N" buckets (shared across all datasets).
-const privMap = buildPrivateMap(stats);
+const privMap = buildPrivateMap([...stats, ...daily, ...anomalies]);
 anonymize(stats, privMap);
 anonymize(anomalies, privMap);
 anonymize(daily, privMap);
@@ -161,6 +203,10 @@ writeFileSync(
     days,
     dailySinceDate: dailySince,
     dailyDays: DAILY_DAYS,
+    dailyRefreshSinceDate: dailyRunSince,
+    incremental,
+    anomaliesRefreshed: refreshAnomalies,
+    ...(incremental ? { incrementalSinceDate: statsSince, incrementalDays } : {}),
   }),
 );
 

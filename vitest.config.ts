@@ -8,7 +8,11 @@ export default defineConfig({
     // the host's Cursor DB (slow + non-deterministic). The cursor parser's own
     // test passes an explicit cursorStateDir, which overrides this.
     env: { AGENT_STATS_CURSOR_DIR: '/nonexistent-agent-stats-cursor-test' },
-    include: ['packages/*/src/**/*.test.ts', 'packages/*/tests/**/*.test.ts'],
+    include: [
+      'packages/*/src/**/*.test.ts',
+      'packages/*/tests/**/*.test.ts',
+      'packages/*/scripts/**/*.test.mjs',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
