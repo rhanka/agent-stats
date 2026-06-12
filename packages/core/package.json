@@ -1,6 +1,6 @@
 {
   "name": "@sentropic/agent-stats-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Parsers, aggregations and schema for agent-stats (Claude Code + Codex CLI session analyzer).",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,6 +17,22 @@
     "./parsers/codex": {
       "types": "./dist/parsers/codex.d.ts",
       "import": "./dist/parsers/codex.js"
+    },
+    "./parsers/cursor": {
+      "types": "./dist/parsers/cursor.d.ts",
+      "import": "./dist/parsers/cursor.js"
+    },
+    "./parsers/gemini": {
+      "types": "./dist/parsers/gemini.d.ts",
+      "import": "./dist/parsers/gemini.js"
+    },
+    "./collect": {
+      "types": "./dist/collect.d.ts",
+      "import": "./dist/collect.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js"
     }
   },
   "files": [
@@ -43,12 +59,12 @@
   "dependencies": {
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
     "@secretlint/types": "^13.0.2",
-    "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.10.0",
     "js-yaml": "^4.1.0",
     "secretlint": "^13.0.2"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/js-yaml": "^4.0.9",
     "@vitest/coverage-v8": "^4.1.7"
   }

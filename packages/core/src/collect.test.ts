@@ -26,6 +26,7 @@ describe('collect() integration', () => {
   let claudeProjectsDir: string;
   let codexDbPath: string;
   let codexRolloutPath: string;
+  let geminiTmpDir: string;
 
   beforeAll(() => {
     tmpDir = mkdtempSync(path.join(tmpdir(), 'agent-stats-collect-'));
@@ -69,6 +70,8 @@ describe('collect() integration', () => {
       'primary',
     );
     db.close();
+
+    geminiTmpDir = path.join(fixturesRoot, 'gemini/tmp');
   });
 
   afterAll(() => {
@@ -82,17 +85,19 @@ describe('collect() integration', () => {
   }
 
   it('streams events from both sources by default', async () => {
-    const events = await gather({ claudeProjectsDir, codexDbPath });
+    const events = await gather({ claudeProjectsDir, codexDbPath, geminiTmpDir });
     const tools = new Set(events.map((e) => e.tool));
     expect(tools.has('claude')).toBe(true);
     expect(tools.has('codex')).toBe(true);
+    expect(tools.has('gemini')).toBe(true);
   });
 
   it('honors the claude-only source filter', async () => {
     const events = await gather({
       claudeProjectsDir,
       codexDbPath,
-      sources: { claude: true, codex: false },
+      geminiTmpDir,
+      sources: { claude: true, codex: false, cursor: false, gemini: false },
     });
     expect(events.every((e) => e.tool === 'claude')).toBe(true);
     expect(events.length).toBeGreaterThan(0);
@@ -102,7 +107,8 @@ describe('collect() integration', () => {
     const events = await gather({
       claudeProjectsDir,
       codexDbPath,
-      sources: { claude: false, codex: true },
+      geminiTmpDir,
+      sources: { claude: false, codex: true, cursor: false, gemini: false },
     });
     expect(events.every((e) => e.tool === 'codex')).toBe(true);
     expect(events.length).toBeGreaterThan(0);
@@ -112,6 +118,7 @@ describe('collect() integration', () => {
     const events = await gather({
       claudeProjectsDir,
       codexDbPath,
+      geminiTmpDir,
       projectCwd: '/home/u/src/demo',
     });
     expect(events.every((e) => e.projectCwd === '/home/u/src/demo')).toBe(true);
@@ -122,15 +129,16 @@ describe('collect() integration', () => {
     const events = await gather({
       claudeProjectsDir,
       codexDbPath,
+      geminiTmpDir,
       since: new Date('2027-01-01'),
     });
     expect(events).toHaveLength(0);
   });
 
   it('still produces normalized session_start events from each source', async () => {
-    const events = await gather({ claudeProjectsDir, codexDbPath });
+    const events = await gather({ claudeProjectsDir, codexDbPath, geminiTmpDir });
     const starts = events.filter((e) => e.kind === 'session_start');
-    expect(starts.length).toBeGreaterThanOrEqual(2);
-    expect(new Set(starts.map((s) => s.tool))).toEqual(new Set(['claude', 'codex']));
+    expect(starts.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(starts.map((s) => s.tool))).toEqual(new Set(['claude', 'codex', 'gemini']));
   });
 });

@@ -4,10 +4,14 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    // Isolate from the real ~/.config/Cursor so collect() in tests doesn't read
-    // the host's Cursor DB (slow + non-deterministic). The cursor parser's own
-    // test passes an explicit cursorStateDir, which overrides this.
-    env: { AGENT_STATS_CURSOR_DIR: '/nonexistent-agent-stats-cursor-test' },
+    // Isolate from the real ~/.config/Cursor and ~/.gemini/tmp so collect() in
+    // tests doesn't read the host's Cursor DB / Gemini sessions (slow +
+    // non-deterministic). Each parser's own test passes an explicit dir, which
+    // overrides these.
+    env: {
+      AGENT_STATS_CURSOR_DIR: '/nonexistent-agent-stats-cursor-test',
+      AGENT_STATS_GEMINI_TMP_DIR: '/nonexistent-agent-stats-gemini-test',
+    },
     include: [
       'packages/*/src/**/*.test.ts',
       'packages/*/tests/**/*.test.ts',

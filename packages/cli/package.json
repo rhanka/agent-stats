@@ -24,7 +24,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@sentropic/agent-stats-core": "0.2.0",
+    "@sentropic/agent-stats-core": "0.3.0",
     "commander": "^14.0.3"
   },
   "repository": {

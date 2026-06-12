@@ -37,6 +37,9 @@ describe('parseClaudeSession', () => {
     expect(start?.sessionId).toBe('test-session-001');
     expect(start?.projectCwd).toBe('/home/u/src/demo');
     expect(start?.tool).toBe('claude');
+    expect(start?.kind).toBe('session_start');
+    if (start?.kind !== 'session_start') throw new Error('unreachable');
+    expect(start.gitBranch).toBe('feature/demo');
   });
 
   it('emits one turn event per assistant response with usage', async () => {

@@ -10,6 +10,8 @@
  *    `-home-u-src-demo`). The project filter is applied on the decoded cwd.
  *  - Codex sessions: query `~/.codex/state_5.sqlite` via `indexCodexSessions`,
  *    then stream each matching rollout.
+ *  - Gemini sessions: scan `~/.gemini/tmp/<project>/chats/session-*.json[l]`
+ *    and use `.project_root` for cwd.
  *
  * Time filtering is applied at the file level when possible (mtime / DB
  * created_at), then enforced per-event using the event `ts`.
@@ -22,9 +24,10 @@ import type { SessionEvent } from './schema.js';
 import { parseClaudeSession } from './parsers/claude.js';
 import { indexCodexSessions, parseCodexRollout, type IndexCodexOptions } from './parsers/codex.js';
 import { collectCursorEvents, type IndexCursorOptions } from './parsers/cursor.js';
+import { collectGeminiEvents, type IndexGeminiOptions } from './parsers/gemini.js';
 
 export interface CollectOptions {
-  sources?: { claude?: boolean; codex?: boolean; cursor?: boolean };
+  sources?: { claude?: boolean; codex?: boolean; cursor?: boolean; gemini?: boolean };
   since?: Date;
   until?: Date;
   /**
@@ -37,6 +40,8 @@ export interface CollectOptions {
   codexDbPath?: string;
   /** Override path for ~/.config/Cursor/User. */
   cursorStateDir?: string;
+  /** Override path for ~/.gemini/tmp. */
+  geminiTmpDir?: string;
 }
 
 const DEFAULT_HOME = (): string => process.env['HOME'] ?? '';
@@ -141,6 +146,18 @@ async function* collectCursor(opts: CollectOptions): AsyncGenerator<SessionEvent
   }
 }
 
+async function* collectGemini(opts: CollectOptions): AsyncGenerator<SessionEvent, void, unknown> {
+  const geminiOpts: IndexGeminiOptions = {};
+  if (opts.geminiTmpDir !== undefined) geminiOpts.tmpDir = opts.geminiTmpDir;
+  if (opts.since !== undefined) geminiOpts.since = opts.since;
+  if (opts.until !== undefined) geminiOpts.until = opts.until;
+  if (opts.projectCwd !== undefined) geminiOpts.projectCwd = opts.projectCwd;
+  for await (const ev of collectGeminiEvents(geminiOpts)) {
+    if (!eventInWindow(ev, opts.since, opts.until)) continue;
+    yield ev;
+  }
+}
+
 /**
  * Yield events from the enabled sources, optionally filtered by project /
  * time window. The order across sources is NOT guaranteed; callers that
@@ -149,7 +166,7 @@ async function* collectCursor(opts: CollectOptions): AsyncGenerator<SessionEvent
 export async function* collect(
   opts: CollectOptions = {},
 ): AsyncGenerator<SessionEvent, void, unknown> {
-  const sources = { claude: true, codex: true, cursor: true, ...(opts.sources ?? {}) };
+  const sources = { claude: true, codex: true, cursor: true, gemini: true, ...(opts.sources ?? {}) };
   if (sources.claude) {
     yield* collectClaude(opts);
   }
@@ -158,5 +175,8 @@ export async function* collect(
   }
   if (sources.cursor) {
     yield* collectCursor(opts);
+  }
+  if (sources.gemini) {
+    yield* collectGemini(opts);
   }
 }
