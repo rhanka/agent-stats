@@ -1,4 +1,4 @@
-{"timestamp":"2026-05-18T10:00:00.000Z","type":"session_meta","payload":{"id":"019e0000-1111-2222-3333-444444444444","timestamp":"2026-05-18T10:00:00.000Z","cwd":"/home/u/src/demo","originator":"codex-tui","cli_version":"0.130.0","thread_source":"primary","model_provider":"openai"}}
+{"timestamp":"2026-05-18T10:00:00.000Z","type":"session_meta","payload":{"id":"019e0000-1111-2222-3333-444444444444","timestamp":"2026-05-18T10:00:00.000Z","cwd":"/home/u/src/demo","originator":"codex-tui","cli_version":"0.130.0","thread_source":"primary","model_provider":"openai","git":{"commit_hash":"abcdef1234567890abcdef1234567890abcdef12","branch":"wp4-core-0.3.0","repository_url":"https://github.com/rhanka/agent-stats.git"}}}
 {"timestamp":"2026-05-18T10:00:00.500Z","type":"turn_context","payload":{"cwd":"/home/u/src/demo","model":"gpt-5.4","effort":"high","summary":"auto"}}
 {"timestamp":"2026-05-18T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Liste les fichiers du projet"}}
 {"timestamp":"2026-05-18T10:00:02.500Z","type":"event_msg","payload":{"type":"exec_command_begin","command":["bash","-lc","ls -la"]}}

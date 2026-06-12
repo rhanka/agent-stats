@@ -4,7 +4,7 @@
  * Public surface: schema types and parsers.
  */
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.3.0';
 
 export * from './schema.js';
 export { parseClaudeSession } from './parsers/claude.js';
@@ -23,6 +23,16 @@ export {
   type CursorIndexEntry,
   type IndexCursorOptions,
 } from './parsers/cursor.js';
+export {
+  indexGeminiSessions,
+  parseGeminiChat,
+  parseGeminiLog,
+  collectGeminiEvents,
+  type GeminiIndexEntry,
+  type IndexGeminiOptions,
+  type ParseGeminiChatOptions,
+  type ParseGeminiLogOptions,
+} from './parsers/gemini.js';
 export { collect, decodeClaudeProjectDir, type CollectOptions } from './collect.js';
 export {
   periodSeries,

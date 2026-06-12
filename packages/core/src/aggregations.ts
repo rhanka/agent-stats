@@ -36,6 +36,9 @@ export interface SessionAggregate {
   durationMs: number;
   turns: number;
   totalUsage: Usage;
+  gitBranch?: string;
+  gitCommit?: string;
+  repoUrl?: string;
   isSubagent: boolean;
   forkedFromId?: string;
   toolCalls: number;
@@ -179,6 +182,9 @@ export async function aggregateSessions(
         s.isSubagent = ev.isSubagent;
         if (ev.forkedFromId) s.forkedFromId = ev.forkedFromId;
         if (ev.surface) s.surface = ev.surface;
+        if (ev.gitBranch) s.gitBranch = ev.gitBranch;
+        if (ev.gitCommit) s.gitCommit = ev.gitCommit;
+        if (ev.repoUrl) s.repoUrl = ev.repoUrl;
         break;
       }
       case 'session_end':
