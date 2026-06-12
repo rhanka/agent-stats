@@ -11,7 +11,7 @@
  * - `kind` is the discriminant; the union is exhaustive (use `assertNever`).
  */
 
-export type Tool = 'claude' | 'codex' | 'cursor';
+export type Tool = 'claude' | 'codex' | 'cursor' | 'gemini';
 
 /** Which local surface produced the session (mainly to split Codex). */
 export type Surface = 'cli' | 'vscode' | 'exec' | 'cursor';
@@ -68,6 +68,12 @@ export interface EventBase {
 export interface SessionStartEvent extends EventBase {
   kind: 'session_start';
   model?: string;
+  /** Git branch reported by the local agent session, when available. */
+  gitBranch?: string;
+  /** Git commit hash reported by the local agent session, when available. */
+  gitCommit?: string;
+  /** Git remote/repository URL reported by the local agent session, when available. */
+  repoUrl?: string;
   /** Codex: parent thread id when this session is a subagent fork. */
   forkedFromId?: string;
   /** Codex: depth in the subagent tree (0 = top-level). */
@@ -157,6 +163,9 @@ export interface SessionMeta {
   durationMs: number;
   turns: number;
   totalUsage: Usage;
+  gitBranch?: string;
+  gitCommit?: string;
+  repoUrl?: string;
   isSubagent: boolean;
   forkedFromId?: string;
   agentNickname?: string;
