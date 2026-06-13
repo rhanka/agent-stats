@@ -15,13 +15,22 @@
 import { createHash } from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 
 import type { SessionEvent, Usage } from '../schema.js';
 
 const sha256short = (text: string): string =>
   createHash('sha256').update(text).digest('hex').slice(0, 16);
+
+const require = createRequire(import.meta.url);
+let DatabaseCtor: typeof Database | undefined;
+
+function loadBetterSqlite3(): typeof Database {
+  DatabaseCtor ??= require('better-sqlite3') as typeof Database;
+  return DatabaseCtor;
+}
 
 export interface IndexCursorOptions {
   /** Override `~/.config/Cursor/User`. */
@@ -121,6 +130,7 @@ function matchesProject(cwd: string, filter: string | undefined): boolean {
  */
 export function indexCursorSessions(opts: IndexCursorOptions = {}): CursorIndexEntry[] {
   const dbPath = defaultCursorDbPath(opts.cursorStateDir);
+  const Database = loadBetterSqlite3();
   let db: Database.Database;
   try {
     db = new Database(dbPath, { readonly: true, fileMustExist: true });
@@ -230,6 +240,7 @@ export async function* collectCursorEvents(
   const entries = indexCursorSessions(opts);
   if (entries.length === 0) return;
   const dbPath = defaultCursorDbPath(opts.cursorStateDir);
+  const Database = loadBetterSqlite3();
   let db: Database.Database;
   try {
     db = new Database(dbPath, { readonly: true, fileMustExist: true });
