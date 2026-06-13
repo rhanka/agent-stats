@@ -151,7 +151,11 @@ describe('indexCodexSessions', () => {
     });
     const touchedRolloutPath = path.join(tmpDir, 'touched-rollout.jsonl');
     closeSync(openSync(touchedRolloutPath, 'w'));
-    utimesSync(touchedRolloutPath, new Date((t - 1 * 86400) * 1000), new Date((t - 1 * 86400) * 1000));
+    utimesSync(
+      touchedRolloutPath,
+      new Date((t - 1 * 86400) * 1000),
+      new Date((t - 1 * 86400) * 1000),
+    );
     insert.run({
       id: 'a-old-touched',
       rolloutPath: touchedRolloutPath,

@@ -14,10 +14,7 @@ const fixturesTmpDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../tests/fixtures/gemini/tmp',
 );
-const chatFixture = path.join(
-  fixturesTmpDir,
-  'demo/chats/session-2026-06-10T10-05-ba5e5639.jsonl',
-);
+const chatFixture = path.join(fixturesTmpDir, 'demo/chats/session-2026-06-10T10-05-ba5e5639.jsonl');
 const logFixture = path.join(fixturesTmpDir, 'log-only/logs.json');
 
 async function gather(iter: AsyncIterable<SessionEvent>): Promise<SessionEvent[]> {
@@ -28,7 +25,9 @@ async function gather(iter: AsyncIterable<SessionEvent>): Promise<SessionEvent[]
 
 describe('parseGeminiChat', () => {
   it('normalizes Gemini chat JSONL into redacted session events', async () => {
-    const events = await gather(parseGeminiChat({ filePath: chatFixture, projectCwd: '/home/u/src/demo' }));
+    const events = await gather(
+      parseGeminiChat({ filePath: chatFixture, projectCwd: '/home/u/src/demo' }),
+    );
 
     expect(events.map((e) => e.kind)).toEqual([
       'session_start',
@@ -75,7 +74,9 @@ describe('indexGeminiSessions', () => {
   it('discovers chat sessions under ~/.gemini/tmp-style project dirs', async () => {
     const entries = await indexGeminiSessions({ tmpDir: fixturesTmpDir });
     expect(entries.map((e) => e.sessionId)).toContain('ba5e5639-448c-4fb2-a4c3-7f2ddf0f0001');
-    expect(entries.find((e) => e.sessionId.startsWith('ba5e'))?.projectCwd).toBe('/home/u/src/demo');
+    expect(entries.find((e) => e.sessionId.startsWith('ba5e'))?.projectCwd).toBe(
+      '/home/u/src/demo',
+    );
   });
 });
 
