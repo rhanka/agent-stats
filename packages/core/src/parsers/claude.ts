@@ -52,6 +52,7 @@ interface ClaudeLine {
   timestamp?: string;
   sessionId?: string;
   cwd?: string;
+  gitBranch?: string;
   message?: ClaudeMessage;
   attachment?: { hookName?: string; hookEvent?: string };
 }
@@ -103,6 +104,7 @@ export async function* parseClaudeSession(
   let projectCwd = '';
   let firstTs: string | undefined;
   let lastTs: string | undefined;
+  let gitBranch: string | undefined;
   let lineCount = 0;
   let startEmitted = false;
 
@@ -128,6 +130,7 @@ export async function* parseClaudeSession(
 
     if (rec.sessionId) sessionId = rec.sessionId;
     if (rec.cwd) projectCwd = rec.cwd;
+    if (rec.gitBranch) gitBranch = rec.gitBranch;
 
     const ts = rec.timestamp;
     if (ts) {
@@ -144,6 +147,7 @@ export async function* parseClaudeSession(
         tool: 'claude',
         sessionId,
         projectCwd,
+        ...(gitBranch ? { gitBranch } : {}),
         isSubagent: false, // Claude Task sub-agents would be detected differently.
       };
       buffer.push(startEvent);

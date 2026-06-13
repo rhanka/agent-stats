@@ -1,0 +1,9 @@
+[
+  {
+    "sessionId": "log-only-session",
+    "messageId": 0,
+    "type": "user",
+    "message": "Log fallback prompt should be hashed only.",
+    "timestamp": "2026-06-11T12:00:00.000Z"
+  }
+]

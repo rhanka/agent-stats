@@ -3,6 +3,32 @@
 All notable changes to `@sentropic/agent-stats` (core + cli) are
 documented here. The project follows [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-06-12
+
+Additive, backward-compatible core release.
+
+### Added
+
+- **Git provenance**: session starts and session aggregates can now carry
+  `gitBranch`, `gitCommit`, and `repoUrl`; Claude populates `gitBranch` from
+  rollout rows and Codex populates all three from rollout `git` metadata.
+- **Gemini source**: parse Gemini CLI `~/.gemini/tmp/<project>/chats/session-*`
+  JSON/JSONL sessions, including redacted user prompts (`textLength` +
+  `textHash`), turns, token usage, tool calls, and `.project_root` cwd
+  discovery. `logs.json` is supported as a prompt-only fallback.
+- **Core subpath exports**: `./parsers/claude`, `./parsers/codex`,
+  `./parsers/cursor`, `./parsers/gemini`, `./collect`, and `./schema`.
+
+### Fixed
+
+- **SQLite load safety**: Codex and Cursor now load `better-sqlite3` lazily
+  only when SQLite-backed functions are called, so Claude/schema/collect
+  imports do not require the native binding at module load.
+- **Codex since-window edge case**: old threads resumed inside a window are
+  kept when `updated_at` or rollout file `mtime` crosses `since`.
+- **Dependency hygiene**: `@types/better-sqlite3` moved to core
+  `devDependencies`.
+
 ## [0.2.0] — 2026-05-28
 
 Additive, backward-compatible release.

@@ -22,10 +22,11 @@
  */
 
 import { createHash } from 'node:crypto';
-import { createReadStream } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { createInterface } from 'node:readline';
 
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 
 import type { SessionEvent, Usage } from '../schema.js';
 import { ZERO_USAGE } from '../schema.js';
@@ -33,6 +34,14 @@ import { ZERO_USAGE } from '../schema.js';
 // ---------------------------------------------------------------------------
 // Index (sqlite)
 // ---------------------------------------------------------------------------
+
+const require = createRequire(import.meta.url);
+let DatabaseCtor: typeof Database | undefined;
+
+function loadBetterSqlite3(): typeof Database {
+  DatabaseCtor ??= require('better-sqlite3') as typeof Database;
+  return DatabaseCtor;
+}
 
 export interface CodexIndexEntry {
   /** Thread id (uuid v7). */
@@ -76,6 +85,17 @@ interface RawThreadRow {
   thread_source: string | null;
 }
 
+function rowMatchesSince(row: RawThreadRow, since: Date | undefined): boolean {
+  if (!since) return true;
+  const sinceSeconds = Math.floor(since.getTime() / 1000);
+  if (row.created_at >= sinceSeconds || row.updated_at >= sinceSeconds) return true;
+  try {
+    return Math.floor(statSync(row.rollout_path).mtimeMs / 1000) >= sinceSeconds;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Query the Codex threads DB and return matching session entries.
  *
@@ -83,14 +103,11 @@ interface RawThreadRow {
  */
 export function indexCodexSessions(opts: IndexCodexOptions = {}): CodexIndexEntry[] {
   const dbPath = opts.dbPath ?? `${process.env['HOME'] ?? ''}/.codex/state_5.sqlite`;
+  const Database = loadBetterSqlite3();
   const db = new Database(dbPath, { readonly: true, fileMustExist: true });
   try {
     const conditions: string[] = [];
     const params: Record<string, number | string> = {};
-    if (opts.since) {
-      conditions.push('created_at >= $since');
-      params['since'] = Math.floor(opts.since.getTime() / 1000);
-    }
     if (opts.until) {
       conditions.push('created_at <= $until');
       params['until'] = Math.floor(opts.until.getTime() / 1000);
@@ -105,7 +122,7 @@ export function indexCodexSessions(opts: IndexCodexOptions = {}): CodexIndexEntr
       }
     }
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-    const limit = opts.limit ? `LIMIT ${Math.floor(opts.limit)}` : '';
+    const limit = opts.limit && !opts.since ? `LIMIT ${Math.floor(opts.limit)}` : '';
     const sql = `
       SELECT
         id, rollout_path, cwd, model, created_at, updated_at, tokens_used,
@@ -116,7 +133,10 @@ export function indexCodexSessions(opts: IndexCodexOptions = {}): CodexIndexEntr
       ${limit}
     `;
     const rows = db.prepare(sql).all(params) as RawThreadRow[];
-    return rows.map((r) => ({
+    const filteredRows = rows
+      .filter((r) => rowMatchesSince(r, opts.since))
+      .slice(0, opts.limit ? Math.floor(opts.limit) : undefined);
+    return filteredRows.map((r) => ({
       id: r.id,
       rolloutPath: r.rollout_path,
       cwd: r.cwd,
@@ -175,6 +195,11 @@ interface CodexSessionMetaPayload {
   forked_from_id?: string;
   timestamp?: string;
   cwd?: string;
+  git?: {
+    commit_hash?: string;
+    branch?: string;
+    repository_url?: string;
+  };
   cli_version?: string;
   agent_nickname?: string;
   model_provider?: string;
@@ -292,6 +317,9 @@ export async function* parseCodexRollout(
         ...(typeof depth === 'number' ? { subagentDepth: depth } : {}),
         ...(p.agent_nickname ? { agentNickname: p.agent_nickname } : {}),
         ...(p.cli_version ? { cliVersion: p.cli_version } : {}),
+        ...(p.git?.branch ? { gitBranch: p.git.branch } : {}),
+        ...(p.git?.commit_hash ? { gitCommit: p.git.commit_hash } : {}),
+        ...(p.git?.repository_url ? { repoUrl: p.git.repository_url } : {}),
         isSubagent: isSub,
       };
       startEmitted = true;

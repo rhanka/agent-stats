@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { closeSync, mkdtempSync, openSync, rmSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import Database from 'better-sqlite3';
@@ -33,6 +33,9 @@ describe('parseCodexRollout', () => {
     expect(events[0].cliVersion).toBe('0.130.0');
     expect(events[0].isSubagent).toBe(false);
     expect(events[0].surface).toBe('cli'); // originator codex-tui → cli
+    expect(events[0].gitBranch).toBe('wp4-core-0.3.0');
+    expect(events[0].gitCommit).toBe('abcdef1234567890abcdef1234567890abcdef12');
+    expect(events[0].repoUrl).toBe('https://github.com/rhanka/agent-stats.git');
   });
 
   it('emits user_prompt for user_message event', async () => {
@@ -146,6 +149,23 @@ describe('indexCodexSessions', () => {
       model: 'gpt-5.4',
       threadSource: 'primary',
     });
+    const touchedRolloutPath = path.join(tmpDir, 'touched-rollout.jsonl');
+    closeSync(openSync(touchedRolloutPath, 'w'));
+    utimesSync(
+      touchedRolloutPath,
+      new Date((t - 1 * 86400) * 1000),
+      new Date((t - 1 * 86400) * 1000),
+    );
+    insert.run({
+      id: 'a-old-touched',
+      rolloutPath: touchedRolloutPath,
+      createdAt: t - 30 * 86400,
+      updatedAt: t - 30 * 86400 + 60,
+      cwd: '/home/u/src/projA',
+      tokens: 1500,
+      model: 'gpt-5.4',
+      threadSource: 'primary',
+    });
     insert.run({
       id: 'a-recent',
       rolloutPath: '/tmp/r2.jsonl',
@@ -175,7 +195,7 @@ describe('indexCodexSessions', () => {
 
   it('returns all sessions when no filters given', () => {
     const rows = indexCodexSessions({ dbPath });
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(4);
   });
 
   it('filters by exact cwd', () => {
@@ -187,7 +207,7 @@ describe('indexCodexSessions', () => {
 
   it('filters by cwd prefix (trailing slash)', () => {
     const rows = indexCodexSessions({ dbPath, projectCwd: '/home/u/src/' });
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(4);
   });
 
   it('filters by since', () => {
@@ -199,10 +219,15 @@ describe('indexCodexSessions', () => {
     expect(rows.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('keeps old threads touched inside the since window by rollout mtime', () => {
+    const rows = indexCodexSessions({ dbPath, since: new Date('2026-05-13T00:00:00Z') });
+    expect(rows.find((r) => r.id === 'a-old-touched')).toBeDefined();
+  });
+
   it('sorts by created_at desc', () => {
     const rows = indexCodexSessions({ dbPath });
     const ids = rows.map((r) => r.id);
     expect(ids[0]).toBe('b-recent'); // most recent
-    expect(ids[ids.length - 1]).toBe('a-old');
+    expect(ids.slice(-2).sort()).toEqual(['a-old', 'a-old-touched']);
   });
 });
