@@ -166,7 +166,13 @@ async function* collectGemini(opts: CollectOptions): AsyncGenerator<SessionEvent
 export async function* collect(
   opts: CollectOptions = {},
 ): AsyncGenerator<SessionEvent, void, unknown> {
-  const sources = { claude: true, codex: true, cursor: true, gemini: true, ...(opts.sources ?? {}) };
+  const sources = {
+    claude: true,
+    codex: true,
+    cursor: true,
+    gemini: true,
+    ...(opts.sources ?? {}),
+  };
   if (sources.claude) {
     yield* collectClaude(opts);
   }
