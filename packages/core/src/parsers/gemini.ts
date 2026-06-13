@@ -91,7 +91,10 @@ interface GeminiLogRecord {
 }
 
 function defaultTmpDir(): string {
-  return process.env['AGENT_STATS_GEMINI_TMP_DIR'] ?? path.join(process.env['HOME'] ?? '', '.gemini', 'tmp');
+  return (
+    process.env['AGENT_STATS_GEMINI_TMP_DIR'] ??
+    path.join(process.env['HOME'] ?? '', '.gemini', 'tmp')
+  );
 }
 
 function matchesProject(cwd: string, filter: string | undefined): boolean {
@@ -221,7 +224,10 @@ export async function* parseGeminiChat(
 ): AsyncGenerator<SessionEvent, void, unknown> {
   const { meta, messages } = await readGeminiChatFile(opts.filePath);
   const firstMessageTs = messages.map((m) => validIso(m.timestamp)).find(Boolean);
-  const lastMessageTs = [...messages].reverse().map((m) => validIso(m.timestamp)).find(Boolean);
+  const lastMessageTs = [...messages]
+    .reverse()
+    .map((m) => validIso(m.timestamp))
+    .find(Boolean);
   const sessionId = opts.sessionId ?? meta.sessionId ?? sessionIdFromFile(opts.filePath);
   const projectCwd = opts.projectCwd ?? '';
   const startTs = validIso(meta.startTime) ?? firstMessageTs ?? new Date(0).toISOString();
@@ -333,7 +339,10 @@ async function chatMetadata(filePath: string): Promise<{
 }> {
   const { meta, messages } = await readGeminiChatFile(filePath);
   const firstMessageTs = messages.map((m) => validIso(m.timestamp)).find(Boolean);
-  const lastMessageTs = [...messages].reverse().map((m) => validIso(m.timestamp)).find(Boolean);
+  const lastMessageTs = [...messages]
+    .reverse()
+    .map((m) => validIso(m.timestamp))
+    .find(Boolean);
   const startTs = validIso(meta.startTime) ?? firstMessageTs ?? new Date(0).toISOString();
   return {
     sessionId: meta.sessionId ?? sessionIdFromFile(filePath),
