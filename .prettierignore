@@ -2,6 +2,9 @@
 packages/web/static/published-*.json
 packages/web/static/demo-*.json
 
+# Generated Surface viewer (graphify HTML export — machine-written, committed asset)
+packages/web/static/surface/
+
 # Build output / caches
 **/dist/
 **/build/
