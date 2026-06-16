@@ -16,6 +16,7 @@
     "build": "npm run build --workspaces --if-present",
     "data:published": "npm run build --workspace packages/core && npm run build --workspace packages/cli && node packages/web/scripts/build-published-data.mjs",
     "data:published:incremental": "npm run build --workspace packages/core && npm run build --workspace packages/cli && node packages/web/scripts/build-published-data.mjs --incremental",
+    "surface:viewer": "node packages/web/scripts/build-surface-viewer.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b",
