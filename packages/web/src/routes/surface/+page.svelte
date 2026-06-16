@@ -38,12 +38,17 @@
   </div>
 
   {#if viewerReady}
+    <!-- sandbox without allow-same-origin: the embedded graphify export builds
+         DOM via innerHTML from node labels/descriptions; isolating it to an
+         opaque origin neutralizes any stored-XSS reaching the agent-stats origin.
+         vis-network is pure JS (no storage), so allow-scripts is sufficient. -->
     <iframe
       class="viewer"
       title="Surface graphify"
       src={viewerSrc}
       loading="eager"
       referrerpolicy="no-referrer"
+      sandbox="allow-scripts"
     ></iframe>
   {:else}
     <div class="placeholder" role="status" aria-live="polite">
