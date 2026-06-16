@@ -12,6 +12,7 @@
   const links = $derived([
     { href: `${base}/`, path: '/', label: i18n.t('nav_overview') },
     { href: `${base}/anomalies`, path: '/anomalies', label: i18n.t('nav_anomalies') },
+    { href: `${base}/surface`, path: '/surface', label: 'Surface' },
   ]);
 </script>
 
