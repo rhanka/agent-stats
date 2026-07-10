@@ -60,7 +60,7 @@
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
     "@secretlint/types": "^13.0.2",
     "better-sqlite3": "^12.10.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.3.0",
     "secretlint": "^13.0.2"
   },
   "devDependencies": {
