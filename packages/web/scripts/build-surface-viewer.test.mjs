@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -21,17 +21,24 @@ function fakeRunner(failWhen) {
     run(file, args) {
       calls.push({ file, args });
       if (failWhen?.(file, args)) throw new Error('graphify exploded');
+      // Emulate graphify merge-graphs producing the requested graph file so
+      // buildSurfaceViewer can stage it as Studio state.
+      if (args[0] === 'merge-graphs') {
+        const out = args[args.indexOf('--out') + 1];
+        mkdirSync(path.dirname(out), { recursive: true });
+        writeFileSync(out, '{"nodes":[],"links":[]}');
+      }
     },
   };
 }
 
 describe('buildSurfaceViewer', () => {
-  test('merges every configured graph.json and exports graphify HTML to the static surface path', () => {
+  test('merges every configured graph.json and exports a Graphify Studio bundle to the static surface path', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'agent-stats-surface-test-'));
     const repoA = makeGraph(root, 'repo-a');
     const repoB = makeGraph(root, 'repo-b');
     const mergeGraphPath = path.join(root, 'surface.json');
-    const viewerHtmlPath = path.join(root, 'static', 'surface', 'graph.html');
+    const viewerHtmlPath = path.join(root, 'static', 'surface', 'graphify');
     const runner = fakeRunner();
 
     const result = buildSurfaceViewer(
@@ -53,9 +60,11 @@ describe('buildSurfaceViewer', () => {
       },
       {
         file: 'graphify-dev',
-        args: ['export', 'html', '--graph', mergeGraphPath, '--out', viewerHtmlPath],
+        args: ['studio', 'export', viewerHtmlPath, '--state', path.join(root, 'surface-state')],
       },
     ]);
+    expect(result.studioGraphPath).toBe(path.join(root, 'surface-state', 'graph.json'));
+    expect(existsSync(result.studioGraphPath)).toBe(true);
   });
 
   test('supports passing a .graphify directory and an export profile', () => {
@@ -70,7 +79,7 @@ describe('buildSurfaceViewer', () => {
         graphifyBin: 'graphify',
         mergeGraphPath: path.join(root, 'surface.json'),
         profile: 'surface-union',
-        viewerHtmlPath: path.join(root, 'static', 'surface', 'graph.html'),
+        viewerHtmlPath: path.join(root, 'static', 'surface', 'graphify'),
       },
       runner,
     );
@@ -78,14 +87,13 @@ describe('buildSurfaceViewer', () => {
     expect(runner.calls[1]).toEqual({
       file: 'graphify',
       args: [
+        'studio',
         'export',
-        'html',
-        '--graph',
-        path.join(root, 'surface.json'),
+        path.join(root, 'static', 'surface', 'graphify'),
+        '--state',
+        path.join(root, 'surface-state'),
         '--profile',
         'surface-union',
-        '--out',
-        path.join(root, 'static', 'surface', 'graph.html'),
       ],
     });
   });
@@ -102,7 +110,7 @@ describe('buildSurfaceViewer', () => {
           graphInputs: [repo],
           graphifyBin: 'graphify',
           mergeGraphPath: path.join(root, 'surface.json'),
-          viewerHtmlPath: path.join(root, 'static', 'surface', 'graph.html'),
+          viewerHtmlPath: path.join(root, 'static', 'surface', 'graphify'),
         },
         runner,
       ),
@@ -113,7 +121,7 @@ describe('buildSurfaceViewer', () => {
   test('wraps graphify command failures with the failed step name', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'agent-stats-surface-test-'));
     const repo = makeGraph(root, 'repo-a');
-    const runner = fakeRunner((_, args) => args[0] === 'export');
+    const runner = fakeRunner((_, args) => args[0] === 'studio');
 
     expect(() =>
       buildSurfaceViewer(
@@ -122,11 +130,11 @@ describe('buildSurfaceViewer', () => {
           graphInputs: [repo.repoDir],
           graphifyBin: 'graphify',
           mergeGraphPath: path.join(root, 'surface.json'),
-          viewerHtmlPath: path.join(root, 'static', 'surface', 'graph.html'),
+          viewerHtmlPath: path.join(root, 'static', 'surface', 'graphify'),
         },
         runner,
       ),
-    ).toThrow('graphify export html failed: graphify exploded');
+    ).toThrow('graphify studio export failed: graphify exploded');
     expect(runner.calls).toHaveLength(2);
   });
 });

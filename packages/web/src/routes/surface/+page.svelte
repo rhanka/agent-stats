@@ -1,7 +1,8 @@
 <script lang="ts">
   import { base } from '$app/paths';
 
-  const viewerSrc = `${base}/surface/graph.html`;
+  // Static Studio bundle produced by Graphify's current `studio export` command.
+  const viewerSrc = `${base}/surface/graphify/`;
 
   let checked = $state(false);
   let viewerReady = $state(false);

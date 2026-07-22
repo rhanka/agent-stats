@@ -20,7 +20,7 @@ async function renderRoute(source) {
 }
 
 describe('surface route', () => {
-  test('renders the missing-viewer placeholder while still targeting the graphify HTML asset', async () => {
+  test('renders the missing-viewer placeholder while targeting the Graphify Studio bundle', async () => {
     const source = readFileSync(
       new URL('../src/routes/surface/+page.svelte', import.meta.url),
       'utf8',
@@ -32,6 +32,6 @@ describe('surface route', () => {
     expect(source).toContain('viewerSrc');
     expect(html).toContain('Surface');
     expect(html).toContain('Viewer non encore généré');
-    expect(html).toContain('/agent-stats/surface/graph.html');
+    expect(html).toContain('/agent-stats/surface/graphify/');
   });
 });
