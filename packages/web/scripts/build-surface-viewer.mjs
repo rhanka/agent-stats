@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Build the committed static Surface viewer from local graphify graphs.
+ * Build the committed static Surface viewer from local Graphify graphs.
  *
- * Run locally on a machine where graphify is installed and each configured
- * repo has a .graphify/graph.json file. The generated HTML is written under
- * packages/web/static/ and committed. CI does not regenerate this asset.
+ * Run locally on a machine where Graphify is installed and each configured
+ * repo has a .graphify/graph.json file. The current Graphify Studio bundle is
+ * written under packages/web/static/ and committed. CI does not regenerate it.
  *
  *   GRAPHIFY_SURFACE_GRAPHS=/path/repo-a,/path/repo-b npm run surface:viewer
  *   GRAPHIFY_BIN=/path/to/graphify node packages/web/scripts/build-surface-viewer.mjs
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '../../..');
 const staticDir = path.resolve(here, '../static');
 
-export const DEFAULT_VIEWER_RELATIVE_PATH = 'surface/graph.html';
+export const DEFAULT_VIEWER_RELATIVE_PATH = 'surface/graphify';
 
 function splitList(value) {
   return value
@@ -76,9 +76,12 @@ export function createSurfaceViewerPlan(options) {
   }
 
   const mergeArgs = ['merge-graphs', ...graphJsonPaths, '--out', mergeGraphPath];
-  const exportArgs = ['export', 'html', '--graph', mergeGraphPath];
+  // Graphify 0.17+ publishes the interactive viewer as a static Studio bundle.
+  // The merged graph is its state directory's graph.json, so stage it there.
+  const studioStateDir = path.join(path.dirname(mergeGraphPath), 'surface-state');
+  const studioGraphPath = path.join(studioStateDir, 'graph.json');
+  const exportArgs = ['studio', 'export', viewerHtmlPath, '--state', studioStateDir];
   if (options.profile) exportArgs.push('--profile', options.profile);
-  exportArgs.push('--out', viewerHtmlPath);
 
   return {
     graphifyBin,
@@ -86,6 +89,8 @@ export function createSurfaceViewerPlan(options) {
     mergeArgs,
     exportArgs,
     mergeGraphPath,
+    studioStateDir,
+    studioGraphPath,
     viewerHtmlPath,
   };
 }
@@ -102,7 +107,9 @@ function runStep(runner, file, args, label) {
 export function buildSurfaceViewer(options, runner) {
   const plan = createSurfaceViewerPlan(options);
   runStep(runner, plan.graphifyBin, plan.mergeArgs, 'graphify merge-graphs');
-  runStep(runner, plan.graphifyBin, plan.exportArgs, 'graphify export html');
+  mkdirSync(plan.studioStateDir, { recursive: true });
+  copyFileSync(plan.mergeGraphPath, plan.studioGraphPath);
+  runStep(runner, plan.graphifyBin, plan.exportArgs, 'graphify studio export');
   return plan;
 }
 
