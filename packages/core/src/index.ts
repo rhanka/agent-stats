@@ -77,6 +77,8 @@ export {
   type CustomSecretPattern,
   type ScanOptions,
 } from './secrets.js';
+export { KUBECONFIG_PATTERNS } from './kubeconfig-patterns.js';
+export { verifyFile, type VerifyOptions, type VerifyEntry, type VerifyResult } from './verify.js';
 export { cleanFile, type CleanFileOptions, type CleanMode, type CleanStats } from './cleanser.js';
 export { mcpBucket, mergeNameCounts, topN, type NameCount } from './tool-stats.js';
 export {
