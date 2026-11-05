@@ -171,7 +171,7 @@ async function main(argv: string[]): Promise<number> {
     });
 
   await program.parseAsync(argv);
-  return 0;
+  return typeof process.exitCode === 'number' ? process.exitCode : 0;
 }
 
 main(process.argv)
