@@ -14,6 +14,7 @@ import { VERSION } from '@sentropic/agent-stats-core';
 import { runStats } from './commands/stats.js';
 import { runReport } from './commands/report.js';
 import { runClean } from './commands/clean.js';
+import { runVerify } from './commands/verify.js';
 import { runAnomalies } from './commands/anomalies.js';
 import { runWeb } from './commands/web.js';
 import { runAnalyze } from './commands/analyze.js';
@@ -118,6 +119,11 @@ async function main(argv: string[]): Promise<number> {
       2048,
     )
     .option('--secret-patterns <file>', 'YAML file of extra org-specific secret regexes')
+    .option('--no-backup', 'Inplace mode: rewrite with no backup (no .bak kept anywhere)')
+    .option(
+      '--backup-dir <dir>',
+      'Inplace mode: backups under <dir> (mode 0600), no .bak beside cleaned files',
+    )
     .action(async (opts) => {
       const result = await runClean({
         input: opts.input,
@@ -125,8 +131,22 @@ async function main(argv: string[]): Promise<number> {
         out: opts.out,
         maxToolResultBytes: opts.maxToolResultBytes,
         secretPatterns: opts.secretPatterns,
+        backup: opts.backup,
+        backupDir: opts.backupDir,
       });
       process.stdout.write(`${result.output}\n`);
+    });
+
+  program
+    .command('verify')
+    .description('Check a file for leaked env-var values (names on argv, values never shown).')
+    .requiredOption('--file <path>', 'File to scan')
+    .requiredOption('--env-file <path>', '.env file holding the secret values')
+    .argument('[vars...]', 'Env-var NAMES to check (values come from --env-file, never argv)')
+    .action(async (vars, opts) => {
+      const result = await runVerify({ file: opts.file, envFile: opts.envFile, vars });
+      process.stdout.write(`${result.output}\n`);
+      if (result.leaked) process.exitCode = 1;
     });
 
   program
