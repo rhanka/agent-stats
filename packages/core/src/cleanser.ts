@@ -16,7 +16,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { chmod, copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, open, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { scanString, type CustomSecretPattern } from './secrets.js';
@@ -194,7 +194,18 @@ export async function cleanFile(opts: CleanFileOptions): Promise<CleanStats> {
         bak = path.join(opts.backupDir, `${path.basename(opts.filePath)}.bak`);
       else bak = `${opts.filePath}.bak`;
       await mkdir(path.dirname(bak), { recursive: true, mode: 0o700 });
-      await copyFile(opts.filePath, bak);
+      // Create the backup with mode 0600 from the start so the secret-bearing
+      // copy is never group/world-readable, even briefly. `open(..., 'w',
+      // 0o600)` sets the mode at creation time (still masked by the umask,
+      // which can only remove bits from 0600); the follow-up chmod tightens
+      // a pre-existing backup that may have looser permissions.
+      const original = await readFile(opts.filePath);
+      const fh = await open(bak, 'w', 0o600);
+      try {
+        await fh.writeFile(original);
+      } finally {
+        await fh.close();
+      }
       await chmod(bak, 0o600);
     }
     const tmp = `${opts.filePath}.tmp-${process.pid}`;
