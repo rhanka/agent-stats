@@ -65,13 +65,18 @@ describe('cli verify exit code', () => {
     writeFileSync(cleanFile, 'nothing sensitive here\n');
 
     const leaked = runCli(['verify', '--file', leakedFile, '--env-file', envFile, 'SYNTH_EXIT']);
-    expect(leaked.status).toBe(1);
-    expect(leaked.stdout).toContain('SYNTH_EXIT');
+    expect(leaked.status, `leak run failed, stderr: ${leaked.stderr}`).toBe(1);
+    expect(
+      leaked.stdout,
+      `leak run stdout empty, status: ${leaked.status}, stderr: ${leaked.stderr}`,
+    ).toContain('SYNTH_EXIT');
     expect(leaked.stdout).not.toContain(value);
 
     const clean = runCli(['verify', '--file', cleanFile, '--env-file', envFile, 'SYNTH_EXIT']);
-    expect(clean.status).toBe(0);
-    expect(clean.stdout).toContain('result: clean');
+    expect(clean.status, `clean run failed, stderr: ${clean.stderr}`).toBe(0);
+    expect(clean.stdout, `clean run stdout: ${clean.stdout}, stderr: ${clean.stderr}`).toContain(
+      'result: clean',
+    );
     expect(clean.stdout).not.toContain(value);
   }, 180000);
 });
