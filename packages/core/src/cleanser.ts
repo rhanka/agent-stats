@@ -4,7 +4,9 @@
  *
  * Modes:
  *   - `archive`     : write a redacted copy into an output dir.
- *   - `inplace`     : rewrite the file in place after saving a `.bak`.
+ *   - `inplace`     : rewrite the file in place after saving a `.bak`
+ *                     (disable with `backup: false`, relocate with
+ *                     `backupDir`/`backupPath`; backups get mode 0600).
  *   - `llm-input`   : same as `archive` plus truncate tool-result strings
  *                     longer than `maxToolResultBytes`.
  *
@@ -14,7 +16,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, open, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { scanString, type CustomSecretPattern } from './secrets.js';
@@ -46,6 +48,24 @@ export interface CleanFileOptions {
    * typically loaded from a YAML file via `loadSecretPatterns`.
    */
   customPatterns?: CustomSecretPattern[];
+  /**
+   * For `inplace`: keep a backup of the pre-clean file. Default true.
+   * When false, the file is rewritten with no backup kept anywhere.
+   * Mutually exclusive with `backupDir` / `backupPath`.
+   */
+  backup?: boolean;
+  /**
+   * For `inplace`: directory receiving the backup instead of a `.bak`
+   * file beside the cleaned file, so no secret stays next to the output.
+   * Created with mode 0700 when missing; backup files get mode 0600.
+   */
+  backupDir?: string;
+  /**
+   * For `inplace`: explicit backup file path. Used by `runClean` to mirror
+   * the input tree under `backupDir`. Overrides the `backupDir` default
+   * location (basename + `.bak`).
+   */
+  backupPath?: string;
 }
 
 export interface CleanStats {
@@ -164,8 +184,30 @@ export async function cleanFile(opts: CleanFileOptions): Promise<CleanStats> {
   let outputPath: string;
   if (mode === 'inplace') {
     outputPath = opts.filePath;
-    const bak = `${opts.filePath}.bak`;
-    await copyFile(opts.filePath, bak);
+    if (opts.backup === false && (opts.backupDir ?? opts.backupPath) !== undefined) {
+      throw new Error('cleanFile: backupDir/backupPath cannot be combined with backup: false');
+    }
+    if (opts.backup !== false) {
+      let bak: string;
+      if (opts.backupPath !== undefined) bak = opts.backupPath;
+      else if (opts.backupDir !== undefined)
+        bak = path.join(opts.backupDir, `${path.basename(opts.filePath)}.bak`);
+      else bak = `${opts.filePath}.bak`;
+      await mkdir(path.dirname(bak), { recursive: true, mode: 0o700 });
+      // Create the backup with mode 0600 from the start so the secret-bearing
+      // copy is never group/world-readable, even briefly. `open(..., 'w',
+      // 0o600)` sets the mode at creation time (still masked by the umask,
+      // which can only remove bits from 0600); the follow-up chmod tightens
+      // a pre-existing backup that may have looser permissions.
+      const original = await readFile(opts.filePath);
+      const fh = await open(bak, 'w', 0o600);
+      try {
+        await fh.writeFile(original);
+      } finally {
+        await fh.close();
+      }
+      await chmod(bak, 0o600);
+    }
     const tmp = `${opts.filePath}.tmp-${process.pid}`;
     await writeFile(tmp, cleaned);
     await rename(tmp, opts.filePath);

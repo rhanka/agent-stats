@@ -123,6 +123,22 @@ jour le plan.md (single source of truth living document).
       (avec `--max-tool-result-bytes`)
 - [x] CLI sub-command `agent-stats clean --input <path> --mode <m> --out <dir>`
 - [x] Tests sur fixtures avec faux secrets (5 core + 4 cli = 9 verts)
+- [x] **Patterns kubeconfig par défaut** : blob base64 (header `apiVersion:
+v1` + `kind: Config` encodé), valeurs YAML `client-key-data`,
+      `client-certificate-data`, `token`, `certificate-authority-data` (+
+      `pem-material` nu). Fichier `packages/core/patterns/kubeconfig.yaml`
+      intégré au scanner par défaut (désactivable via
+      `includeDefaultPatterns: false`), sync YAML↔TS testée. Fixtures
+      kubeconfig synthétiques assemblées au runtime.
+- [x] **Contrôle backup inplace** : `--no-backup` (aucun backup) et
+      `--backup-dir <dir>` (backups mode 0600, jamais de `.bak` à côté du
+      fichier nettoyé). `backup`/`backupDir`/`backupPath` dans `cleanFile`.
+- [x] **Sub-command `agent-stats verify`** : compte les occurrences (raw +
+      base64) des valeurs nommées d'un `.env` via descripteur de fichier,
+      n'imprime que noms/comptes/empreintes sha256, exit non-zéro si fuite.
+- [x] **README « Purging leaked secrets from a session transcript »** :
+      verify avant, `clean --mode inplace --no-backup`, verify après +
+      exemples SessionEnd hook / systemd timer (non installés).
 
 ### WP5 — Anomaly detection heuristiques (status: 4/4, 100%)
 
