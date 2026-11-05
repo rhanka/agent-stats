@@ -55,10 +55,36 @@ Options:
 Each week section contains: Totals (sessions, turns, tool calls,
 compactions, tokens, cache-hit %, cost), Top projects, Top models.
 
+### `agent-stats clean`
+
+Redact secrets in session jsonl files via `secretlint` plus the built-in
+kubeconfig patterns (`packages/core/patterns/kubeconfig.yaml`).
+
+```
+agent-stats clean --input <file|dir> --mode <archive|inplace|llm-input> [options]
+
+Options:
+  --out <dir>                Output directory (archive | llm-input)
+  --max-tool-result-bytes <n> Truncate strings larger than N bytes (llm-input)
+  --secret-patterns <file>   YAML file of extra org-specific secret regexes
+  --no-backup                Inplace: rewrite with no backup (no .bak kept)
+  --backup-dir <dir>         Inplace: backups under <dir> (mode 0600)
+```
+
+### `agent-stats verify`
+
+Check a file for leaked env-var values without exposing them: values are read
+from a `.env` file through a file descriptor, only var NAMES come from argv,
+and stdout carries names, counts and sha256 fingerprints only. Exits non-zero
+while any count is above zero.
+
+```
+agent-stats verify --file <path> --env-file <.env> [VAR...]
+```
+
 ### Roadmap
 
 - `anomalies` — heuristic frustration / IA-out-of-control detection (WP5)
-- `clean` — redact secrets in session jsonl via `secretlint` (WP6)
 - `analyze` — LLM-based qualitative analysis via `@sentropic/llm-mesh` (WP7)
 - `web` — launch the local SvelteKit dashboard (WP8)
 - `bench` — benchmark LLM models on a labeled eval set (WP7)
