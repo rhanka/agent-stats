@@ -64,8 +64,41 @@ export function scrubInvalidRepoRows(rows) {
   return rows;
 }
 
-export function mergeIncrementalRows(existing, refreshed, sincePeriod) {
-  return sortRows([...existing.filter((row) => rowPeriod(row) < sincePeriod), ...refreshed]);
+function periodToolKey(row) {
+  return `${rowPeriod(row)}|${row.tool ?? ''}`;
+}
+
+function sessionsByKey(rows) {
+  const totals = new Map();
+  for (const row of rows) {
+    const key = periodToolKey(row);
+    totals.set(key, (totals.get(key) ?? 0) + (row.sessions ?? 0));
+  }
+  return totals;
+}
+
+/**
+ * Replace the rows of the recalculated window with the refreshed ones — except
+ * where the local transcripts are gone: Claude Code purges sessions after
+ * `cleanupPeriodDays` (30 by default), so recomputing an old period yields
+ * fewer sessions than were published. For each (period, tool) whose refreshed
+ * session count is lower than the published one, the published rows are kept.
+ * Kept keys are pushed to `retained` (optional) for reporting.
+ */
+export function mergeIncrementalRows(existing, refreshed, sincePeriod, retained = []) {
+  const before = existing.filter((row) => rowPeriod(row) < sincePeriod);
+  const window = existing.filter((row) => rowPeriod(row) >= sincePeriod);
+  const oldTotals = sessionsByKey(window);
+  const newTotals = sessionsByKey(refreshed);
+  const keep = new Set(
+    [...oldTotals].filter(([key, n]) => (newTotals.get(key) ?? 0) < n).map(([key]) => key),
+  );
+  retained.push(...[...keep].sort());
+  return sortRows([
+    ...before,
+    ...window.filter((row) => keep.has(periodToolKey(row))),
+    ...refreshed.filter((row) => !keep.has(periodToolKey(row))),
+  ]);
 }
 
 function anomalyKey(row) {
@@ -123,4 +156,17 @@ export function anonymize(rows, privateMap) {
     }
   }
   return rows;
+}
+
+/**
+ * Self-healing incremental window: rebuild everything since the previous
+ * publication (`meta.generatedAt`) plus a safety margin, so a publisher that
+ * was down for weeks catches up on its next run instead of leaving holes.
+ * Returns null when there is no usable previous publication.
+ */
+export function incrementalDaysSinceMeta(meta, now = new Date(), marginDays = 7, minDays = 3) {
+  const at = Date.parse(meta?.generatedAt ?? '');
+  if (!Number.isFinite(at)) return null;
+  const elapsed = Math.max(0, Math.ceil((now.getTime() - at) / DAY_MS));
+  return Math.max(minDays, elapsed + marginDays);
 }
