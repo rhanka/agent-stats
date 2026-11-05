@@ -118,7 +118,8 @@ function countValue(haystack: string, value: string): { rawCount: number; base64
 
 /**
  * Scan `filePath` for the values of `varNames` read from `envFilePath`.
- * Throws (naming only the var) for unknown or empty vars — fail closed.
+ * Throws with the var index only (never the token) for unknown or empty
+ * vars — fail closed without echoing argv into stderr or logs.
  */
 export async function verifyFile(opts: VerifyOptions): Promise<VerifyResult> {
   if (opts.varNames.length === 0) {
@@ -128,16 +129,17 @@ export async function verifyFile(opts: VerifyOptions): Promise<VerifyResult> {
   const haystack = await readThroughFd(opts.filePath);
 
   const entries: VerifyEntry[] = [];
-  for (const name of opts.varNames) {
+  for (let i = 0; i < opts.varNames.length; i++) {
+    const name = opts.varNames[i]!;
     if (!ENV_NAME.test(name)) {
-      throw new Error(`verifyFile: invalid var name ${JSON.stringify(name)}`);
+      throw new Error(`verifyFile: invalid var name at index ${i}`);
     }
     if (!env.has(name)) {
-      throw new Error(`verifyFile: unknown var ${JSON.stringify(name)} in env file`);
+      throw new Error(`verifyFile: unknown var at index ${i} in env file`);
     }
     const value = env.get(name)!;
     if (!value) {
-      throw new Error(`verifyFile: empty value for var ${JSON.stringify(name)}`);
+      throw new Error(`verifyFile: empty value for var at index ${i}`);
     }
     const { rawCount, base64Count } = countValue(haystack, value);
     entries.push({

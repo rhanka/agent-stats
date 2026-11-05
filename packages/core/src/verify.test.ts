@@ -67,19 +67,36 @@ describe('verifyFile', () => {
     expect(r.output).toContain('result: clean');
   });
 
-  it('should fail closed on unknown vars without revealing values', async () => {
+  it('should fail closed on unknown vars without echoing argv', async () => {
     writeFileSync(target, 'x\n');
     await expect(
       verifyFile({ filePath: target, envFilePath: envFile, varNames: ['NOPE_MISSING'] }),
-    ).rejects.toThrow(/unknown var "NOPE_MISSING"/);
-    // The rejection mentions the name only; values stay out of the error.
+    ).rejects.toThrow(/unknown var at index 0/);
+    // The rejection carries the index only; names and values stay out.
     try {
       await verifyFile({ filePath: target, envFilePath: envFile, varNames: ['NOPE_MISSING'] });
       expect.unreachable();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      expect(msg).not.toContain('NOPE_MISSING');
       expect(msg).not.toContain(valueA);
       expect(msg).not.toContain(valueB);
+    }
+  });
+
+  it('should not echo a pasted value in the invalid-name error', async () => {
+    writeFileSync(target, 'x\n');
+    const pasted = fakeValue('SYNTH-PASTED-', 40);
+    await expect(
+      verifyFile({ filePath: target, envFilePath: envFile, varNames: [pasted] }),
+    ).rejects.toThrow(/invalid var name at index 0/);
+    try {
+      await verifyFile({ filePath: target, envFilePath: envFile, varNames: [pasted] });
+      expect.unreachable();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      expect(msg).not.toContain(pasted);
+      expect(msg).not.toContain(valueA);
     }
   });
 
