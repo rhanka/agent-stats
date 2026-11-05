@@ -25,6 +25,16 @@ export interface CleanCommandOptions {
   maxToolResultBytes?: number;
   /** Path to a YAML file of extra org-specific secret regexes. */
   secretPatterns?: string;
+  /**
+   * For `inplace`: skip the backup entirely (no `.bak` kept anywhere).
+   * Mutually exclusive with `backupDir`.
+   */
+  backup?: boolean;
+  /**
+   * For `inplace`: write backups under this directory (mirroring the input
+   * tree, files get mode 0600) instead of `.bak` files beside cleaned files.
+   */
+  backupDir?: string;
 }
 
 export interface CleanCommandResult {
@@ -60,6 +70,12 @@ export async function runClean(opts: CleanCommandOptions): Promise<CleanCommandR
   if ((mode === 'archive' || mode === 'llm-input') && !opts.out) {
     throw new Error(`--out is required for --mode ${mode}`);
   }
+  if (mode !== 'inplace' && (opts.backup === false || opts.backupDir !== undefined)) {
+    throw new Error('--no-backup/--backup-dir only apply to --mode inplace');
+  }
+  if (opts.backup === false && opts.backupDir !== undefined) {
+    throw new Error('--backup-dir cannot be combined with --no-backup');
+  }
   const files = await listJsonlFiles(opts.input);
   const inputStat = await stat(opts.input);
   const baseDir = inputStat.isDirectory() ? opts.input : path.dirname(opts.input);
@@ -73,14 +89,21 @@ export async function runClean(opts: CleanCommandOptions): Promise<CleanCommandR
 
   for (const file of files) {
     let outputPath: string | undefined;
+    let backupPath: string | undefined;
     if (mode !== 'inplace') {
       const rel = path.relative(baseDir, file);
       outputPath = path.join(opts.out!, rel);
+    } else if (opts.backupDir !== undefined) {
+      const rel = path.relative(baseDir, file);
+      backupPath = path.join(opts.backupDir, `${rel}.bak`);
     }
     const r = await cleanFile({
       filePath: file,
       mode,
       ...(outputPath ? { outputPath } : {}),
+      ...(backupPath ? { backupPath } : {}),
+      ...(opts.backup !== undefined ? { backup: opts.backup } : {}),
+      ...(opts.backupDir !== undefined && !backupPath ? { backupDir: opts.backupDir } : {}),
       ...(opts.maxToolResultBytes !== undefined
         ? { maxToolResultBytes: opts.maxToolResultBytes }
         : {}),

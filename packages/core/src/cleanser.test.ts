@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { cleanFile } from './cleanser.js';
@@ -53,6 +53,38 @@ describe('cleanFile', () => {
     const after = readFileSync(workFile, 'utf8');
     expect(after).not.toContain(tokens.github);
     expect(after).toMatch(/<<SECRET:/);
+  });
+
+  it('inplace mode with backup:false keeps no backup anywhere', async () => {
+    const stats = await cleanFile({ filePath: workFile, mode: 'inplace', backup: false });
+    expect(stats.secretsFound).toBeGreaterThan(0);
+    expect(existsSync(`${workFile}.bak`)).toBe(false);
+    const after = readFileSync(workFile, 'utf8');
+    expect(after).not.toContain(tokens.github);
+    expect(after).toMatch(/<<SECRET:/);
+  });
+
+  it('inplace mode with backupDir relocates the backup with mode 0600', async () => {
+    const original = readFileSync(workFile, 'utf8');
+    const backupDir = path.join(tmpDir, 'backups');
+    const stats = await cleanFile({ filePath: workFile, mode: 'inplace', backupDir });
+    expect(stats.secretsFound).toBeGreaterThan(0);
+    expect(existsSync(`${workFile}.bak`)).toBe(false);
+    const bakPath = path.join(backupDir, 'session.jsonl.bak');
+    expect(existsSync(bakPath)).toBe(true);
+    expect(readFileSync(bakPath, 'utf8')).toBe(original);
+    expect(statSync(bakPath).mode & 0o777).toBe(0o600);
+  });
+
+  it('inplace mode rejects backup:false combined with backupDir', async () => {
+    await expect(
+      cleanFile({
+        filePath: workFile,
+        mode: 'inplace',
+        backup: false,
+        backupDir: path.join(tmpDir, 'backups'),
+      }),
+    ).rejects.toThrow(/cannot be combined/);
   });
 
   it('llm-input mode: truncates large strings even without secrets', async () => {
