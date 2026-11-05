@@ -18,6 +18,8 @@ import { creator as presetRecommend } from '@secretlint/secretlint-rule-preset-r
 import type { SecretLintCoreConfig } from '@secretlint/types';
 import yaml from 'js-yaml';
 
+import { KUBECONFIG_PATTERNS } from './kubeconfig-patterns.js';
+
 export interface SecretMatch {
   /** UTF-16 code unit offset where the secret starts in the source string. */
   start: number;
@@ -54,6 +56,12 @@ export interface ScanOptions {
   filePath?: string;
   /** Extra regex patterns to apply on top of the preset rules. */
   customPatterns?: CustomSecretPattern[];
+  /**
+   * Apply the built-in kubeconfig patterns (`KUBECONFIG_PATTERNS`) in
+   * addition to the preset rules. Default true; set to false to scan with
+   * preset + custom patterns only.
+   */
+  includeDefaultPatterns?: boolean;
 }
 
 /**
@@ -155,6 +163,8 @@ export async function scanString(text: string, opts: ScanOptions = {}): Promise<
     ruleId: m.ruleId,
     message: m.message,
   }));
-  const custom = opts.customPatterns?.length ? scanCustom(text, opts.customPatterns) : [];
+  const defaults = opts.includeDefaultPatterns === false ? [] : KUBECONFIG_PATTERNS;
+  const allCustom = [...defaults, ...(opts.customPatterns ?? [])];
+  const custom = allCustom.length ? scanCustom(text, allCustom) : [];
   return dedupeRanges([...preset, ...custom]);
 }
