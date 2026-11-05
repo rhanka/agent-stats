@@ -9,18 +9,38 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '../../..');
 const cliPath = path.join(repoRoot, 'packages/cli/dist/cli.js');
 
-/** Rebuild only when dist is missing or older than the sources it embeds. */
-function distIsStale(): boolean {
-  const stale = (built: string, src: string): boolean => {
-    if (!existsSync(built) || !existsSync(src)) return true;
-    return statSync(built).mtimeMs < statSync(src).mtimeMs;
-  };
-  const coreDist = path.join(repoRoot, 'packages/core/dist/index.js');
-  return (
-    stale(cliPath, path.join(here, 'cli.ts')) ||
-    stale(coreDist, path.join(repoRoot, 'packages/core/src/verify.ts')) ||
-    stale(coreDist, path.join(repoRoot, 'packages/core/src/cleanser.ts'))
-  );
+const requiredOutputs = [
+  cliPath,
+  path.join(here, '..', 'dist', 'commands', 'verify.js'),
+  path.join(here, '..', 'dist', 'commands', 'web.js'),
+  path.join(repoRoot, 'packages', 'core', 'dist', 'index.js'),
+];
+
+/**
+ * Rebuild only when a required output is missing or older than the sources
+ * it embeds. A stale `tsconfig.tsbuildinfo` can make `tsc` skip emit, so
+ * existence of every required output is checked, not just `cli.js`.
+ */
+function distIsComplete(): boolean {
+  let newestSrc = 0;
+  for (const src of [
+    path.join(here, 'cli.ts'),
+    path.join(repoRoot, 'packages', 'core', 'src', 'verify.ts'),
+    path.join(repoRoot, 'packages', 'core', 'src', 'cleanser.ts'),
+  ]) {
+    try {
+      newestSrc = Math.max(newestSrc, statSync(src).mtimeMs);
+    } catch {
+      return false;
+    }
+  }
+  return requiredOutputs.every((f) => {
+    try {
+      return existsSync(f) && statSync(f).mtimeMs >= newestSrc;
+    } catch {
+      return false;
+    }
+  });
 }
 
 function fakeValue(seed: string, len: number): string {
@@ -39,14 +59,22 @@ describe('cli verify exit code', () => {
   let tmpDir = '';
 
   beforeAll(() => {
-    if (!distIsStale()) return;
-    const build = spawnSync(
-      'npm',
-      ['run', 'build', '--workspace', 'packages/core', '--workspace', 'packages/cli'],
-      { cwd: repoRoot, encoding: 'utf8', timeout: 180000 },
-    );
-    if (build.status !== 0) {
-      throw new Error(`cli exit test setup: build failed\n${build.stdout}\n${build.stderr}`);
+    if (distIsComplete()) return;
+    // Solution-style build: honors project references (unlike the plain
+    // `tsc -p` workspace scripts). `--force` ignores incremental state:
+    // `tsc -b` otherwise trusts `tsconfig.tsbuildinfo` and can skip emit
+    // even when outputs are missing. `tsc` is spawned directly to avoid
+    // npm cache issues.
+    const tscBin = path.join(repoRoot, 'node_modules', '.bin', 'tsc');
+    const build = spawnSync(process.execPath, [tscBin, '-b', '--force'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 180000,
+    });
+    if (build.status !== 0 || !distIsComplete()) {
+      throw new Error(
+        `cli exit test setup: build failed (status=${build.status})\n${build.stdout}\n${build.stderr}`,
+      );
     }
   }, 180000);
 
