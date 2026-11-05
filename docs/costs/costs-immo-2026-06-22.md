@@ -21,17 +21,19 @@ REPOS=radar-immobilier SINCE=2026-04-22 UNTIL=2026-06-23 \
 - **Compute SCW** : run-rate immo ≈ 4,9 CAD/mois (cf. [`docs/scw/infra.md`](../scw/infra.md), base 2026-06-14 : compute usage-réel ~1,5 %, block 10 Gi, S3 vide, RWX 0), proraté aux jours.
 
 ## Capacité mesurée (pic 7 j, global, 2 mois)
+
 Claude **23,4 Md/sem** · Codex **35,4 Md/sem**.
 
 ## Facture (LLM prorata + SCW + temps)
 
-| Période | claude (part) | codex (part) | prorata LLM | **LLM facturable** | SCW | **Total facturable** | temps interactif |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| A — 05-24→06-14 (22 j) | 7,34 Md (10,0 %) | 0,45 Md (0,41 %) | 40,88 CAD | **47,01 CAD** | ~3,6 CAD | **~50,6 CAD** | ~0,4 h |
-| **B — depuis le 14 (06-15→06-22, 8 j)** | 2,53 Md (9,4 %) | 0,83 Md (2,05 %) | 15,30 CAD | **17,60 CAD** | ~1,3 CAD | **~18,9 CAD** | ~0,8 h |
-| Cumul — 05-24→06-22 (30 j) | 9,87 Md (9,8 %) | 1,28 Md (0,84 %) | 56,18 CAD | **64,61 CAD** | ~4,9 CAD | **~69,5 CAD** | ~1,2 h |
+| Période                                 | claude (part)    | codex (part)     | prorata LLM | **LLM facturable** | SCW      | **Total facturable** | temps interactif |
+| --------------------------------------- | ---------------- | ---------------- | ----------- | ------------------ | -------- | -------------------- | ---------------- |
+| A — 05-24→06-14 (22 j)                  | 7,34 Md (10,0 %) | 0,45 Md (0,41 %) | 40,88 CAD   | **47,01 CAD**      | ~3,6 CAD | **~50,6 CAD**        | ~0,4 h           |
+| **B — depuis le 14 (06-15→06-22, 8 j)** | 2,53 Md (9,4 %)  | 0,83 Md (2,05 %) | 15,30 CAD   | **17,60 CAD**      | ~1,3 CAD | **~18,9 CAD**        | ~0,8 h           |
+| Cumul — 05-24→06-22 (30 j)              | 9,87 Md (9,8 %)  | 1,28 Md (0,84 %) | 56,18 CAD   | **64,61 CAD**      | ~4,9 CAD | **~69,5 CAD**        | ~1,2 h           |
 
 ## Notes / réserves
+
 - **A reproduit la facture du 14/06** (47 CAD vs 49,52 ; part claude 10,0 % vs 10,5 %) → méthode validée. Le « +28 % » d'une tentative intermédiaire venait du `stats` **agrégé** (sur-comptait) ; le `collect()` brut est juste.
 - **Temps = plancher interactif** : attention DIRECTE tapée en session cli sur le repo. Immo a surtout tourné en **délégué/flotte** cette semaine (d'où temps tapé faible) ; la **supervision** du travail délégué n'est pas attribuée ici. À compléter via le tracking de charge si besoin.
 - SCW : extrapolé du run-rate du 14/06 ; ré-inspecter `scw`/`kubectl` si l'infra a changé.
