@@ -14,6 +14,9 @@
  *   node packages/web/scripts/build-published-data.mjs [--days 180]
  *   node packages/web/scripts/build-published-data.mjs --incremental [--incremental-days 3]
  *   node packages/web/scripts/build-published-data.mjs --incremental --refresh-anomalies
+ *   node packages/web/scripts/build-published-data.mjs --incremental --incremental-days auto --out-dir <dir>
+ *
+ * The daily publication runs outside the dev checkout: see scripts/publisher/.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, writeFileSync, readFileSync, mkdtempSync } from 'node:fs';
@@ -26,6 +29,7 @@ import { aggregateSessions, bucketBy, collect } from '@sentropic/agent-stats-cor
 import {
   anonymize,
   buildPrivateMap,
+  incrementalDaysSinceMeta,
   mergeAnomaliesByKey,
   mergeIncrementalRows,
   periodStartForIncremental,
@@ -45,10 +49,33 @@ function numberArg(name, fallback) {
   return n;
 }
 
+function stringArg(name) {
+  const idx = process.argv.indexOf(name);
+  return idx === -1 ? undefined : process.argv[idx + 1];
+}
+
+// --out-dir: where the published JSON files are read (incremental merge) and
+// written. Defaults to packages/web/static; the publisher points it at its
+// `published-data` branch worktree instead.
+const outDir = stringArg('--out-dir') ? path.resolve(stringArg('--out-dir')) : staticDir;
+
 const days = numberArg('--days', 420);
 const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 const incremental = process.argv.includes('--incremental');
-const incrementalDays = numberArg('--incremental-days', 3);
+// --incremental-days auto: rebuild since the previous publication (+ margin).
+const incrementalDays =
+  stringArg('--incremental-days') === 'auto'
+    ? autoIncrementalDays()
+    : numberArg('--incremental-days', 3);
+
+function autoIncrementalDays() {
+  const file = path.join(outDir, 'published-meta.json');
+  const meta = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
+  const n = incrementalDaysSinceMeta(meta);
+  if (n === null)
+    throw new Error(`--incremental-days auto: no usable generatedAt in ${file}; run a full build`);
+  return n;
+}
 const refreshAnomalies = !incremental || process.argv.includes('--refresh-anomalies');
 const incrementalSince = periodStartForIncremental(new Date(), incrementalDays);
 const statsSince = incremental ? incrementalSince : since;
@@ -139,7 +166,7 @@ const dailySince = new Date(Date.now() - DAILY_DAYS * 86_400_000).toISOString().
 const dailyRunSince = incremental ? statsSince : dailySince;
 
 function readPublished(name) {
-  const file = path.join(staticDir, name);
+  const file = path.join(outDir, name);
   if (!existsSync(file)) return [];
   return scrubInvalidRepoRows(JSON.parse(readFileSync(file, 'utf8')));
 }
@@ -174,12 +201,19 @@ let anomalies = refreshAnomalies
   : readPublished('published-anomalies.json');
 
 if (incremental) {
-  stats = mergeIncrementalRows(readPublished('published-stats.json'), stats, statsSince);
+  const retained = [];
+  stats = mergeIncrementalRows(readPublished('published-stats.json'), stats, statsSince, retained);
   daily = mergeIncrementalRows(
     readPublished('published-daily.json').filter((row) => row.weekStart >= dailySince),
     daily,
     statsSince,
+    retained,
   );
+  if (retained.length > 0) {
+    console.error(
+      `Kept previously published rows where local transcripts are gone (period|tool): ${retained.join(', ')}`,
+    );
+  }
   if (refreshAnomalies) {
     anomalies = mergeAnomaliesByKey(readPublished('published-anomalies.json'), anomalies);
   }
@@ -192,11 +226,11 @@ anonymize(stats, privMap);
 anonymize(anomalies, privMap);
 anonymize(daily, privMap);
 
-writeFileSync(path.join(staticDir, 'published-stats.json'), JSON.stringify(stats));
-writeFileSync(path.join(staticDir, 'published-daily.json'), JSON.stringify(daily));
-writeFileSync(path.join(staticDir, 'published-anomalies.json'), JSON.stringify(anomalies));
+writeFileSync(path.join(outDir, 'published-stats.json'), JSON.stringify(stats));
+writeFileSync(path.join(outDir, 'published-daily.json'), JSON.stringify(daily));
+writeFileSync(path.join(outDir, 'published-anomalies.json'), JSON.stringify(anomalies));
 writeFileSync(
-  path.join(staticDir, 'published-meta.json'),
+  path.join(outDir, 'published-meta.json'),
   JSON.stringify({
     generatedAt: new Date().toISOString(),
     sinceDate: since,
