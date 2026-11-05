@@ -59,6 +59,8 @@ const STRINGS = {
     published_msg:
       "The maintainer's own Claude Code + Codex usage, computed locally and committed (projects link to their public git repos){at}. Run `npx @sentropic/agent-stats web` for your own.",
     generated: '. Generated {d}',
+    stale_title: 'Stale snapshot',
+    stale_msg: 'Last published {d} ({n} days ago): the daily refresh has not run since.',
     no_anomalies: 'No anomalies detected.',
     no_data_window: 'No data in this window.',
   },
@@ -118,6 +120,9 @@ const STRINGS = {
     published_msg:
       "L'usage Claude Code + Codex du mainteneur, calculé en local et commité (les projets pointent vers leurs dépôts git publics){at}. Lance `npx @sentropic/agent-stats web` pour les tiens.",
     generated: '. Généré le {d}',
+    stale_title: 'Snapshot périmé',
+    stale_msg:
+      'Dernière publication le {d} (il y a {n} jours) : le rafraîchissement quotidien ne tourne plus.',
     no_anomalies: 'Aucune anomalie détectée.',
     no_data_window: 'Aucune donnée sur cette fenêtre.',
   },
