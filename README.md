@@ -85,7 +85,8 @@ The two snippets below are examples for owner approval only. Nothing here is
 installed by the repo; the owner copies and adapts them explicitly.
 
 SessionEnd hook example (`~/.claude/settings.json`): re-verify the session
-transcript after each session and append the counts to a local log.
+transcript after each session and append the counts to a local log (stdout
+only — stderr stays on the console so error text is never persisted).
 
 ```json
 {
@@ -96,7 +97,7 @@ transcript after each session and append the counts to a local log.
         "hooks": [
           {
             "type": "command",
-            "command": "agent-stats verify --file \"$SESSION_JSONL\" --env-file \"$HOME/.config/agent-stats/secrets.env\" KUBECONFIG_TOKEN >> ~/.config/agent-stats/verify.log 2>&1"
+            "command": "agent-stats verify --file \"$SESSION_JSONL\" --env-file \"$HOME/.config/agent-stats/secrets.env\" KUBECONFIG_TOKEN >> ~/.config/agent-stats/verify.log"
           }
         ]
       }
