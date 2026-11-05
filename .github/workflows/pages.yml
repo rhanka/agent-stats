@@ -57,6 +57,22 @@ jobs:
             echo "No custom domain set, using sub-path '/${GITHUB_REPOSITORY##*/}'."
           fi
 
+      # The dashboard data is computed on the maintainer's machine (local
+      # transcripts) and pushed to the `published-data` orphan branch by
+      # scripts/publisher/run.sh, which then dispatches this workflow on main.
+      # Overlay it on packages/web/static; the copy on main is the fallback.
+      - name: Overlay published data (branch published-data)
+        run: |
+          if git ls-remote --exit-code --heads origin published-data >/dev/null; then
+            git fetch --depth=1 origin published-data
+            for f in published-stats.json published-daily.json published-anomalies.json published-meta.json; do
+              git show "FETCH_HEAD:${f}" > "packages/web/static/${f}"
+            done
+            echo "Published data: $(cat packages/web/static/published-meta.json)"
+          else
+            echo "::warning::No published-data branch; using the JSON committed on main."
+          fi
+
       - name: Build web (with resolved base path)
         env:
           PAGES_BASE_PATH: ${{ steps.pages_cfg.outputs.base_path }}

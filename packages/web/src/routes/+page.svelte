@@ -60,6 +60,11 @@
   let error: string | null = $state(null);
   let published = $state(false);
   let publishedAt: string | null = $state(null);
+  // The snapshot is refreshed daily; flag it when the publisher has stalled.
+  const STALE_DAYS = 3;
+  const staleDays = $derived(
+    publishedAt ? Math.floor((Date.now() - Date.parse(publishedAt)) / 86_400_000) : 0,
+  );
 
   // Default to a quarter so the time-series chart and sparklines have several
   // weeks to plot on first load (7 days = a single bucket = nothing to trend).
@@ -425,6 +430,15 @@
         })}
       />
     </div>
+    {#if publishedAt && staleDays > STALE_DAYS}
+      <div class="banner">
+        <Alert
+          tone="warning"
+          title={t('stale_title')}
+          message={t('stale_msg', { d: publishedAt.slice(0, 10), n: staleDays })}
+        />
+      </div>
+    {/if}
   {/if}
   <section class="cards">
     <Card>
