@@ -1,6 +1,14 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { cleanFile } from './cleanser.js';
@@ -72,6 +80,30 @@ describe('cleanFile', () => {
     expect(existsSync(`${workFile}.bak`)).toBe(false);
     const bakPath = path.join(backupDir, 'session.jsonl.bak');
     expect(existsSync(bakPath)).toBe(true);
+    expect(readFileSync(bakPath, 'utf8')).toBe(original);
+    expect(statSync(bakPath).mode & 0o777).toBe(0o600);
+  });
+
+  it('inplace default .bak is created with mode 0600 even under a permissive umask', async () => {
+    const prev = process.umask(0o022);
+    try {
+      const original = readFileSync(workFile, 'utf8');
+      await cleanFile({ filePath: workFile, mode: 'inplace' });
+      const bakPath = `${workFile}.bak`;
+      expect(existsSync(bakPath)).toBe(true);
+      expect(readFileSync(bakPath, 'utf8')).toBe(original);
+      expect(statSync(bakPath).mode & 0o777).toBe(0o600);
+    } finally {
+      process.umask(prev);
+    }
+  });
+
+  it('tightens a pre-existing loose backup to 0600', async () => {
+    const bakPath = `${workFile}.bak`;
+    writeFileSync(bakPath, 'stale');
+    chmodSync(bakPath, 0o644);
+    const original = readFileSync(workFile, 'utf8');
+    await cleanFile({ filePath: workFile, mode: 'inplace' });
     expect(readFileSync(bakPath, 'utf8')).toBe(original);
     expect(statSync(bakPath).mode & 0o777).toBe(0o600);
   });
